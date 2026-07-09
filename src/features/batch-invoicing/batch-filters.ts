@@ -34,20 +34,50 @@ export const BATCH_COL_FILTER_DEFS = [
   { key: 'invoiceAmount', label: 'Invoice Amount', type: 'range' as const },
 ]
 
-const STAGE_KEYS = ['rate_validated', 'ops_validated', 'pod_verified', 'rfi', 'invoiced', 'email_delivery', 'as', 'all']
+const PIPELINE_STAGES = new Set([
+  'all',
+  'rate_validated',
+  'ops_validated',
+  'pod_verified',
+  'rfi',
+  'ready',
+  'invoiced',
+  'email_delivery',
+  'as',
+])
+
+/** Match order to pipeline segment or validation sub-filter */
+export function matchesPipelineStage(order: Order, stage: string): boolean {
+  if (stage === 'all') return true
+
+  if (order.validationFilter === stage) return true
+  if (order.stage === stage) return true
+
+  if (stage === 'rate_validated') {
+    return order.stage === 'rate_validated' || order.validationGroup === 'rate_validation'
+  }
+  if (stage === 'ops_validated') {
+    return order.stage === 'ops_validated' || order.validationGroup === 'operation_validation'
+  }
+  if (stage === 'rate_validation') {
+    return order.validationGroup === 'rate_validation' && order.stage !== 'rate_validated'
+  }
+  if (stage === 'ops_validation') {
+    return order.validationGroup === 'operation_validation' && order.stage !== 'ops_validated'
+  }
+
+  if (!PIPELINE_STAGES.has(stage)) {
+    return order.validationFilter === stage
+  }
+
+  return false
+}
 
 export function filterBatchOrders(orders: Order[], filters: BatchFilters): Order[] {
   return orders.filter((o) => {
     const { stage, search, searchScope, division, customer, poBillingStatus, quickPod, colFilters } = filters
 
-    if (stage !== 'all') {
-      const stageMatch = o.stage === stage || o.validationFilter === stage
-      if (!stageMatch) {
-        if (!STAGE_KEYS.includes(stage)) {
-          if (o.validationFilter !== stage) return false
-        } else if (o.stage !== stage && !o.validationFilter) return false
-      }
-    }
+    if (!matchesPipelineStage(o, stage)) return false
 
     if (search) {
       const q = search.toLowerCase()
@@ -74,6 +104,6 @@ export function filterBatchOrders(orders: Order[], filters: BatchFilters): Order
   })
 }
 
-export const DIVISIONS = ['ALL', 'Dedicated', 'OTR', 'Regional']
-export const CUSTOMERS = ['ALL', 'Tenneco', 'Walmart', 'Amazon']
+export const DIVISIONS = ['ALL', 'Dedicated', 'OTR', 'Regional', 'CHARGER LOGISTICS', 'CHARGER DEDICATED']
+export const CUSTOMERS = ['ALL', 'Tenneco', 'TENNECO INC', 'Walmart', 'Amazon', 'Labatt Brewing Co']
 export const PO_BILLING_OPTIONS = ['ALL', 'Pending', 'Billed', 'Hold']

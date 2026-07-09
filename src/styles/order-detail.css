@@ -706,7 +706,203 @@
   border-top: 1px solid var(--sr-border-1);
 }
 
-/* Three-column layout */
+/* Two-column order layout */
+.od-dual {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+@media (min-width: 960px) {
+  .od-dual {
+    flex-direction: row;
+    align-items: stretch;
+  }
+}
+
+.od-panel--left {
+  flex: 1.15;
+  border-bottom: 1px solid var(--sr-border-1);
+}
+
+.od-panel--right {
+  flex: 1;
+}
+
+@media (min-width: 960px) {
+  .od-panel--left {
+    border-bottom: none;
+    border-right: 1px solid var(--sr-border-1);
+  }
+}
+
+.od-tabs--apple {
+  background: var(--sr-surface-1);
+  border-bottom: 1px solid var(--sr-border-1);
+  padding: 0 8px;
+}
+
+.od-tabs--apple .od-tabs__btn {
+  padding: 11px 12px;
+  font-size: 12px;
+  border-radius: 0;
+}
+
+.od-tabs--apple .od-tabs__btn.is-active {
+  color: var(--sr-text-primary);
+  border-bottom-color: var(--sr-text-primary);
+}
+
+.od-hover-card {
+  transition: background 140ms ease-out, box-shadow 140ms ease-out;
+}
+
+.od-hover-card:hover {
+  background: rgba(15, 26, 42, 0.02);
+}
+
+.od-charges-clean__row:hover {
+  background: var(--sr-table-hover);
+}
+
+.od-summary--inset {
+  margin-top: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--sr-border-1);
+}
+
+/* Billing panel */
+.od-billing-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.od-billing-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.od-billing-kpi {
+  padding: 10px 12px;
+  background: var(--sr-surface-2);
+  border-radius: 10px;
+  border: 1px solid var(--sr-border-1);
+}
+
+.od-billing-kpi dt {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sr-text-meta);
+}
+
+.od-billing-kpi dd {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sr-text-primary);
+}
+
+.od-billing-kpi__amt {
+  font-variant-numeric: tabular-nums;
+  color: var(--sr-action) !important;
+}
+
+.od-claims-card {
+  margin-top: 4px;
+  padding: 12px 14px;
+  background: var(--sr-surface-2);
+  border: 1px solid var(--sr-border-1);
+  border-radius: 12px;
+}
+
+.od-claims-card__head {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.od-claims-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--sr-surface-1);
+  color: var(--sr-action);
+  flex-shrink: 0;
+}
+
+.od-claims-card__title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sr-text-primary);
+}
+
+.od-claims-card__hint {
+  margin: 2px 0 0;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--sr-text-meta);
+}
+
+.od-claims-card__name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--sr-text-primary);
+}
+
+.od-claims-card__region {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--sr-text-meta);
+}
+
+.od-claims-card__links {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.od-claims-card__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--sr-action);
+  text-decoration: none;
+}
+
+.od-claims-card__link:hover {
+  text-decoration: underline;
+}
+
+.od-claims-card__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--sr-border-1);
+  font-size: 10px;
+  color: var(--sr-text-meta);
+}
+
+.od-doc-item.is-active {
+  background: var(--accent-soft);
+  color: var(--sr-action);
+  font-weight: 600;
+}
+
+/* Three-column (legacy) — kept for reference */
 .od-triple {
   display: flex;
   flex: 1;

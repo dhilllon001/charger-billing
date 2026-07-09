@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -16,24 +16,19 @@ import { cn } from '@/lib/cn'
 import type { Order, OrderDocument, OrderAdjuster, AuditEntry } from '@/data/models'
 
 const leftTabs = ['Charges', 'Internal Ratings', 'Related PO', 'Notes', 'Instructions'] as const
-const rightTabs = ['Account', 'Audit', 'Documents'] as const
+const rightTabs = ['Account', 'Billing', 'Audit', 'Documents'] as const
 
 export function OrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
   const addToast = useUiStore((s) => s.addToast)
-  const setSidebarCollapsed = useUiStore((s) => s.setSidebarCollapsed)
   const order = getOrderById(orderId ?? '')
-  const adjuster = getOrderAdjuster(orderId ?? '')
+  const claimsContact = getOrderAdjuster(orderId ?? '')
   const auditLog = getOrderAuditLog(orderId ?? '')
 
   const [leftTab, setLeftTab] = useState<(typeof leftTabs)[number]>('Charges')
-  const [rightTab, setRightTab] = useState<(typeof rightTabs)[number]>('Audit')
+  const [rightTab, setRightTab] = useState<(typeof rightTabs)[number]>('Billing')
   const [selectedDoc, setSelectedDoc] = useState<string | null>(null)
-
-  useEffect(() => {
-    setSidebarCollapsed(true)
-  }, [setSidebarCollapsed])
 
   const charges = order?.charges ?? []
   const totals = useMemo(() => {
@@ -123,85 +118,82 @@ export function OrderDetailPage() {
         )}
       </header>
 
-      <div className="od-triple">
-        {/* Left — charges */}
+      <div className="od-dual">
+        {/* Left — billing workspace */}
         <div className="od-panel od-panel--left">
-          <div className="od-panel__head">
-            <span className="od-panel__title">Charges</span>
-            <Button size="sm" variant="ghost" className="!h-7">
-              <Plus size={14} strokeWidth={1.7} /> Add
-            </Button>
-          </div>
-          <div className="od-panel__body od-panel__body--flush">
-            <table className="od-charges-clean">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Description</th>
-                  <th className="num">Qty</th>
-                  <th className="num">Total</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {charges.map((c, i) => (
-                  <tr key={i}>
-                    <td className="item">{c.item}</td>
-                    <td className="desc">{c.description}</td>
-                    <td className="num">{c.qty}</td>
-                    <td className="num">{formatCurrency(c.total, order.currency)}</td>
-                    <td className="act">
-                      <button type="button" className="od-charge-del">
-                        <Trash2 size={13} strokeWidth={1.7} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="od-summary od-summary--compact">
-            <span>Subtotal <strong>{formatCurrency(totals.sub, order.currency)}</strong></span>
-            <span className="od-summary__total">{formatCurrency(totals.total || order.invoiceAmount, order.currency)}</span>
-          </div>
-          <div className="od-left-tabs">
-            {leftTabs.filter((t) => t !== 'Charges').map((t) => (
+          <div className="od-tabs od-tabs--apple">
+            {leftTabs.map((t) => (
               <button
                 key={t}
                 type="button"
                 onClick={() => setLeftTab(t)}
-                className={cn('od-left-tabs__btn', leftTab === t && 'is-active')}
+                className={cn('od-tabs__btn', leftTab === t && 'is-active')}
               >
                 {t}{(t === 'Notes' || t === 'Instructions') && ' (0)'}
               </button>
             ))}
+            {leftTab === 'Charges' && (
+              <Button size="sm" variant="ghost" className="!ml-auto !mr-2 !h-7 shrink-0">
+                <Plus size={14} strokeWidth={1.7} /> Add
+              </Button>
+            )}
           </div>
-          {leftTab !== 'Charges' && (
-            <div className="od-panel__body od-panel__body--secondary">
-              {leftTab === 'Internal Ratings' && <EmptyPanel title="Internal Ratings" hint="Rating details when configured." />}
-              {leftTab === 'Related PO' && <RelatedPOTable order={order} />}
-              {leftTab === 'Notes' && <EmptyPanel title="No notes" hint="Add notes for this order." />}
-              {leftTab === 'Instructions' && <EmptyPanel title="No instructions" hint="Special handling instructions." />}
-            </div>
-          )}
-        </div>
 
-        {/* Center — adjuster */}
-        <div className="od-panel od-panel--center">
-          <div className="od-panel__head">
-            <span className="od-panel__title">Adjuster</span>
-            <span className={cn('od-adjuster-status', `od-adjuster-status--${adjuster.status.toLowerCase().replace(' ', '-')}`)}>
-              {adjuster.status}
-            </span>
-          </div>
           <div className="od-panel__body">
-            <AdjusterPanel adjuster={adjuster} />
+            {leftTab === 'Charges' && (
+              <>
+                <div className="od-panel__body--flush -mx-3.5 sm:-mx-4">
+                  <table className="od-charges-clean">
+                    <thead>
+                      <tr>
+                        <th>Item</th>
+                        <th>Description</th>
+                        <th className="num">Qty</th>
+                        <th className="num">Total</th>
+                        <th />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {charges.map((c, i) => (
+                        <tr key={i} className="od-charges-clean__row">
+                          <td className="item">{c.item}</td>
+                          <td className="desc">{c.description}</td>
+                          <td className="num">{c.qty}</td>
+                          <td className="num">{formatCurrency(c.total, order.currency)}</td>
+                          <td className="act">
+                            <button type="button" className="od-charge-del" title="Remove charge">
+                              <Trash2 size={13} strokeWidth={1.7} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="od-summary od-summary--compact od-summary--inset">
+                  <span>Base <strong>{formatCurrency(totals.base, order.currency)}</strong></span>
+                  <span>FSC <strong>{formatCurrency(totals.fsc, order.currency)}</strong></span>
+                  <span className="od-summary__total">{formatCurrency(totals.total || order.invoiceAmount, order.currency)}</span>
+                </div>
+              </>
+            )}
+            {leftTab === 'Internal Ratings' && (
+              <EmptyPanel title="Internal Ratings" hint="Carrier and lane rating details appear here when configured." />
+            )}
+            {leftTab === 'Related PO' && <RelatedPOTable order={order} />}
+            {leftTab === 'Notes' && <EmptyPanel title="No notes" hint="Add notes for this order." actionLabel="Add note" />}
+            {leftTab === 'Instructions' && (
+              <EmptyPanel
+                title={order.instruction ? 'Instructions' : 'No instructions'}
+                hint={order.instruction ?? 'Special handling instructions appear here.'}
+              />
+            )}
           </div>
         </div>
 
-        {/* Right — account / audit / docs */}
+        {/* Right — account / billing / audit / docs */}
         <div className="od-panel od-panel--right">
-          <div className="od-tabs">
+          <div className="od-tabs od-tabs--apple">
             {rightTabs.map((t) => (
               <button
                 key={t}
@@ -215,6 +207,9 @@ export function OrderDetailPage() {
           </div>
           <div className="od-panel__body">
             {rightTab === 'Account' && <AccountPanel order={order} />}
+            {rightTab === 'Billing' && (
+              <BillingPanel order={order} claimsContact={claimsContact} totals={totals} />
+            )}
             {rightTab === 'Audit' && <AuditPanel entries={auditLog} />}
             {rightTab === 'Documents' && (
               <DocumentsPanel
@@ -240,7 +235,7 @@ function CompactStop({
   onView: () => void
 }) {
   return (
-    <div className={cn('od-compact-stop', type === 'delivery' && 'od-compact-stop--delivery')}>
+    <div className={cn('od-compact-stop od-hover-card', type === 'delivery' && 'od-compact-stop--delivery')}>
       <div className="od-compact-stop__head">
         <span className="od-compact-stop__label">{type === 'pickup' ? 'Shipper · Pickup' : 'Consignee · Delivery'}</span>
         <Button variant="ghost" size="sm" className="!h-6 !px-2 !text-[10px]" onClick={onView}>
@@ -265,20 +260,15 @@ function AccountPanel({ order }: { order: Order }) {
     { label: 'Distance', value: order.distance },
     { label: 'Lane', value: order.lane },
     { label: 'Dispatcher', value: order.dispatcher },
-    { label: 'Billing Status', value: order.poBillingStatus },
-    { label: 'Currency', value: order.currency ?? 'CAD' },
+    { label: "Caller's Name", value: order.callerName },
     { label: 'Sales Rep', value: order.salesRep },
-    { label: 'Invoice Status', value: order.invoiceStatus },
-    { label: 'Invoice Amount', value: formatCurrency(order.invoiceAmount, order.currency) },
-    { label: 'Pick Up', value: formatDate(order.pickUpDate) },
-    { label: 'Delivery', value: formatDate(order.deliveryDate) },
     { label: 'Instruction', value: order.instruction },
   ]
 
   return (
     <dl className="od-detail-list">
       {fields.filter((f) => f.value).map((f) => (
-        <div key={f.label} className="od-detail-item">
+        <div key={f.label} className="od-detail-item od-hover-card">
           <dt>{f.label}</dt>
           <dd>{f.value}</dd>
         </div>
@@ -287,43 +277,85 @@ function AccountPanel({ order }: { order: Order }) {
   )
 }
 
-function AdjusterPanel({ adjuster }: { adjuster: OrderAdjuster }) {
+function BillingPanel({
+  order,
+  claimsContact,
+  totals,
+}: {
+  order: Order
+  claimsContact: OrderAdjuster
+  totals: { sub: number; total: number }
+}) {
   return (
-    <div className="od-adjuster">
-      <div className="od-adjuster__card">
-        <div className="od-adjuster__avatar">
-          <User size={18} strokeWidth={1.7} />
+    <div className="od-billing-panel">
+      <div className="od-billing-kpis">
+        <div className="od-billing-kpi od-hover-card">
+          <dt>Invoice Status</dt>
+          <dd>{order.invoiceStatus}</dd>
         </div>
-        <div>
-          <p className="od-adjuster__name">{adjuster.name}</p>
-          <p className="od-adjuster__region">{adjuster.region}</p>
+        <div className="od-billing-kpi od-hover-card">
+          <dt>PO Billing</dt>
+          <dd>{order.poBillingStatus}</dd>
+        </div>
+        <div className="od-billing-kpi od-hover-card">
+          <dt>Invoice Amount</dt>
+          <dd className="od-billing-kpi__amt">{formatCurrency(order.invoiceAmount, order.currency)}</dd>
+        </div>
+        <div className="od-billing-kpi od-hover-card">
+          <dt>Charge Total</dt>
+          <dd className="od-billing-kpi__amt">{formatCurrency(totals.total, order.currency)}</dd>
         </div>
       </div>
-      <div className="od-adjuster__contacts">
-        <a href={`tel:${adjuster.phone}`} className="od-adjuster__link">
-          <Phone size={13} strokeWidth={1.7} /> {adjuster.phone}
-        </a>
-        <a href={`mailto:${adjuster.email}`} className="od-adjuster__link">
-          <Mail size={13} strokeWidth={1.7} /> {adjuster.email}
-        </a>
-      </div>
-      {adjuster.lastContact && (
-        <p className="od-adjuster__meta">Last contact · {adjuster.lastContact}</p>
-      )}
-      <p className="od-adjuster__meta">Open claims · <strong>{adjuster.openClaims}</strong></p>
-      {adjuster.notes && <p className="od-adjuster__note">{adjuster.notes}</p>}
-      {adjuster.adjustments && adjuster.adjustments.length > 0 && (
-        <div className="od-adjuster__history">
-          <p className="od-adjuster__history-title">Recent adjustments</p>
-          {adjuster.adjustments.map((a, i) => (
-            <div key={i} className="od-adjuster__history-row">
-              <span className="od-adjuster__history-date">{a.date}</span>
-              <span className="od-adjuster__history-type">{a.type}</span>
-              <p className="od-adjuster__history-note">{a.note}</p>
+
+      <dl className="od-detail-list">
+        {[
+          { label: 'Currency', value: order.currency ?? 'CAD' },
+          { label: 'Pick Up Date', value: formatDate(order.pickUpDate) },
+          { label: 'Delivery Date', value: formatDate(order.deliveryDate) },
+          { label: 'Late Invoice Reason', value: order.reasonForLateInvoice ?? 'None' },
+          { label: 'Draft Invoice', value: order.draftInvoice ? order.draftInvoiceNo ?? 'Yes' : 'No' },
+          { label: 'Audited', value: order.audited ? 'Yes' : 'No' },
+        ]
+          .filter((f) => f.value)
+          .map((f) => (
+            <div key={f.label} className="od-detail-item od-hover-card">
+              <dt>{f.label}</dt>
+              <dd>{f.value}</dd>
             </div>
           ))}
+      </dl>
+
+      <ClaimsContactCard contact={claimsContact} />
+    </div>
+  )
+}
+
+function ClaimsContactCard({ contact }: { contact: OrderAdjuster }) {
+  return (
+    <div className="od-claims-card od-hover-card">
+      <div className="od-claims-card__head">
+        <div className="od-claims-card__icon">
+          <User size={16} strokeWidth={1.7} />
         </div>
-      )}
+        <div>
+          <p className="od-claims-card__title">Claims &amp; billing contact</p>
+          <p className="od-claims-card__hint">Your point of contact for charge disputes and adjustments on this load.</p>
+        </div>
+      </div>
+      <p className="od-claims-card__name">{contact.name}</p>
+      <p className="od-claims-card__region">{contact.region}</p>
+      <div className="od-claims-card__links">
+        <a href={`tel:${contact.phone}`} className="od-claims-card__link">
+          <Phone size={12} strokeWidth={1.7} /> {contact.phone}
+        </a>
+        <a href={`mailto:${contact.email}`} className="od-claims-card__link">
+          <Mail size={12} strokeWidth={1.7} /> {contact.email}
+        </a>
+      </div>
+      <div className="od-claims-card__footer">
+        <span>Open claims: <strong>{contact.openClaims}</strong></span>
+        {contact.lastContact && <span>Last contact: {contact.lastContact}</span>}
+      </div>
     </div>
   )
 }
@@ -332,7 +364,7 @@ function AuditPanel({ entries }: { entries: AuditEntry[] }) {
   return (
     <ul className="od-audit-list">
       {entries.map((e) => (
-        <li key={e.id} className={cn('od-audit-item', e.status && `od-audit-item--${e.status}`)}>
+        <li key={e.id} className={cn('od-audit-item od-hover-card', e.status && `od-audit-item--${e.status}`)}>
           <div className="od-audit-item__head">
             <span className="od-audit-item__action">{e.action}</span>
             <span className="od-audit-item__time">{e.timestamp}</span>
@@ -371,8 +403,8 @@ function DocumentsPanel({
                 type="button"
                 onClick={() => onSelect(f.name)}
                 className={cn(
-                  'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[11px]',
-                  active === f.name ? 'bg-[var(--accent-soft)] font-medium text-[var(--sr-action)]' : 'text-[var(--sr-text-secondary)] hover:bg-[var(--sr-surface-2)]'
+                  'od-doc-item od-hover-card flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[11px]',
+                  active === f.name ? 'is-active' : ''
                 )}
               >
                 <FileText size={13} strokeWidth={1.7} />
@@ -382,16 +414,16 @@ function DocumentsPanel({
           </div>
         </div>
       ))}
-      <Card className="!rounded-lg !border-[var(--sr-border-1)]">
+      <Card className="!rounded-xl !border-[var(--sr-border-1)] !shadow-none">
         <div className="flex items-center gap-1 border-b border-[var(--sr-border-1)] bg-[var(--sr-surface-2)] px-2 py-1">
           {[ZoomOut, ZoomIn, RotateCw, Maximize2].map((Icon, i) => (
-            <button key={i} type="button" className="rounded p-1 text-[var(--sr-text-meta)]">
+            <button key={i} type="button" className="rounded-md p-1.5 text-[var(--sr-text-meta)] transition-colors hover:bg-white">
               <Icon size={12} strokeWidth={1.7} />
             </button>
           ))}
         </div>
-        <div className="flex min-h-[120px] flex-col items-center justify-center p-4 text-center text-[11px] text-[var(--sr-text-meta)]">
-          <FileText size={24} strokeWidth={1.5} className="mb-1 opacity-50" />
+        <div className="flex min-h-[140px] flex-col items-center justify-center p-4 text-center text-[11px] text-[var(--sr-text-meta)]">
+          <FileText size={28} strokeWidth={1.5} className="mb-1 opacity-40" />
           {active ?? 'Select a document'}
         </div>
       </Card>
@@ -402,8 +434,16 @@ function DocumentsPanel({
 function RelatedPOTable({ order }: { order: Order }) {
   return (
     <table className="od-charges-clean">
-      <tbody>
+      <thead>
         <tr>
+          <th>Order</th>
+          <th>Category</th>
+          <th>Billing</th>
+          <th>PO</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr className="od-charges-clean__row">
           <td className="item">{order.orderNo}</td>
           <td>{order.poCategory}</td>
           <td>{order.poBillingStatus}</td>
@@ -414,11 +454,12 @@ function RelatedPOTable({ order }: { order: Order }) {
   )
 }
 
-function EmptyPanel({ title, hint }: { title: string; hint: string }) {
+function EmptyPanel({ title, hint, actionLabel }: { title: string; hint: string; actionLabel?: string }) {
   return (
-    <div className="py-8 text-center">
-      <p className="text-[13px] font-semibold">{title}</p>
-      <p className="mt-1 text-[11px] text-[var(--sr-text-meta)]">{hint}</p>
+    <div className="py-12 text-center">
+      <p className="text-[14px] font-semibold">{title}</p>
+      <p className="mt-1 text-[12px] text-[var(--sr-text-meta)]">{hint}</p>
+      {actionLabel && <Button variant="ghost" size="sm" className="mt-4">{actionLabel}</Button>}
     </div>
   )
 }

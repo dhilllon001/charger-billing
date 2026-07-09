@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ChevronRight, ArrowRight, Sparkles } from 'lucide-react'
+import { ArrowRight, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Segment } from '@/components/ui/Segment'
 import { SearchInput } from '@/components/ui/SearchInput'
@@ -12,6 +12,7 @@ import { FiltersDrawer } from '@/components/layout/FiltersDrawer'
 import { ReportFilterStrip } from '@/components/report/ReportFilterStrip'
 import { AppliedFiltersRow } from '@/components/report/AppliedFiltersRow'
 import { SrDataTable } from '@/components/report/SrDataTable'
+import { RowQuickActions } from '@/components/report/RowQuickActions'
 import {
   selectApplied,
   searchApplied,
@@ -195,7 +196,7 @@ export function BatchInvoicingPage() {
       </div>
 
       <div className="batch-panel">
-        <div className="batch-panel__pipeline">
+        <div className="batch-panel__pipeline batch-panel__pipeline--dropdown">
           <Segment
             items={segments}
             value={filters.stage}
@@ -319,10 +320,16 @@ export function BatchInvoicingPage() {
                   ),
               },
               {
-                key: 'open',
+                key: 'actions',
                 header: '',
                 thClassName: 'col-action',
-                cell: () => <ChevronRight size={16} strokeWidth={2} className="sr-row-chevron" />,
+                cell: (row) => (
+                  <RowQuickActions
+                    onOpen={() => navigate(`/orders/${row.id}`)}
+                    onAudit={() => addToast(`Auditing ${row.orderNo}…`)}
+                    onInvoice={() => addToast(`Draft invoice for ${row.orderNo}`)}
+                  />
+                ),
               },
             ]}
           />
