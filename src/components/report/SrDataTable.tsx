@@ -9,7 +9,16 @@ export type SrColumn<T> = {
   align?: 'left' | 'right'
   filter?: { type: 'text' | 'range' }
   className?: string
+  /** Hide column below breakpoint */
+  hideBelow?: 'md' | 'lg'
   cell: (row: T) => React.ReactNode
+}
+
+export type SrMobileCardRender<T> = (row: T) => {
+  title: React.ReactNode
+  subtitle?: React.ReactNode
+  amount?: React.ReactNode
+  meta?: React.ReactNode
 }
 
 type SrDataTableProps<T extends { id: string }> = {
@@ -29,6 +38,13 @@ type SrDataTableProps<T extends { id: string }> = {
   emptyHint?: string
   emptyAction?: React.ReactNode
   maxHeight?: string
+  responsive?: boolean
+  mobileCard?: SrMobileCardRender<T>
+}
+
+const hideClass: Record<NonNullable<SrColumn<unknown>['hideBelow']>, string> = {
+  md: 'sr-col-hide-md',
+  lg: 'sr-col-hide-lg',
 }
 
 export function SrDataTable<T extends { id: string }>({
@@ -48,14 +64,29 @@ export function SrDataTable<T extends { id: string }>({
   emptyHint,
   emptyAction,
   maxHeight = 'min(65vh, 720px)',
+  responsive = false,
+  mobileCard,
 }: SrDataTableProps<T>) {
   const rowHover = useRowHover<T>()
   const allSelected = rows.length > 0 && selectedIds && rows.every((r) => selectedIds.has(r.id))
   const showHover = hoverTitle && hoverDetails
 
+  if (rows.length === 0) {
+    return (
+      <div className="sr-table-empty">
+        <p className="font-semibold text-[var(--sr-text-primary)]">{emptyTitle}</p>
+        {emptyHint && <p className="mt-1 text-[12px]">{emptyHint}</p>}
+        {emptyAction && <div className="mt-3">{emptyAction}</div>}
+      </div>
+    )
+  }
+
   return (
     <>
-      <div className="sr-table-wrap" style={{ maxHeight }}>
+      <div
+        className={cn('sr-table-wrap', responsive && 'sr-table-wrap--responsive')}
+        style={{ maxHeight }}
+      >
         <table className="sr-table">
           <thead>
             <tr>
@@ -70,7 +101,10 @@ export function SrDataTable<T extends { id: string }>({
                 </th>
               )}
               {columns.map((col) => (
-                <th key={col.key} className={col.align === 'right' ? 'num' : undefined}>
+                <th
+                  key={col.key}
+                  className={cn(col.align === 'right' && 'num', col.hideBelow && hideClass[col.hideBelow])}
+                >
                   {col.filter && onColFilterChange ? (
                     <ColumnFilterHeader
                       label={col.header}
@@ -92,53 +126,48 @@ export function SrDataTable<T extends { id: string }>({
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 ? (
-              <tr>
-                <td colSpan={columns.length + (onToggleRow ? 1 : 0)}>
-                  <div className="sr-table-empty">
-                    <p className="font-semibold text-[var(--sr-text-primary)]">{emptyTitle}</p>
-                    {emptyHint && <p className="mt-1 text-[12px]">{emptyHint}</p>}
-                    {emptyAction && <div className="mt-3">{emptyAction}</div>}
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              rows.map((row) => {
-                const selected = selectedIds?.has(row.id)
-                const hoverProps = showHover ? rowHover.bind(row.id, row) : {}
-                return (
-                  <tr
-                    key={row.id}
-                    className={cn(
-                      showHover && 'sr-table-row--hoverable',
-                      onRowClick && 'sr-table-row--clickable',
-                      selected && 'is-selected',
-                      rowHover.isHovered(row.id) && 'is-hovered'
-                    )}
-                    onClick={() => onRowClick?.(row)}
-                    {...hoverProps}
-                  >
-                    {onToggleRow && (
-                      <td onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          checked={!!selected}
-                          onChange={() => onToggleRow(row.id)}
-                          className="rounded"
-                        />
-                      </td>
-                    )}
-                    {columns.map((col) => (
-                      <td key={col.key} className={cn(col.align === 'right' && 'num', col.className)}>
-                        {col.cell(row)}
-                      </td>
-                    ))}
-                  </tr>
-                )
-              })
-            )}
+            {rows.map((row) => {
+              const selected = selectedIds?.has(row.id)
+              const hoverProps = showHover ? rowHover.bind(row.id, row) : {}
+              return (
+                <tr
+                  key={row.id}
+                  className={cn(
+                    showHover && 'sr-table-row--hoverable',
+                    onRowClick && 'sr-table-row--clickable',
+                    selected && 'is-selected',
+                    rowHover.isHovered(row.id) && 'is-hovered'
+                  )}
+                  onClick={() => onRowClick?.(row)}
+                  {...hoverProps}
+                >
+                  {onToggleRow && (
+                    <td onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={!!selected}
+                        onChange={() => onToggleRow(row.id)}
+                        className="rounded"
+                      />
+                    </td>
+                  )}
+                  {columns.map((col) => (
+                    <td
+                      key={col.key}
+                      className={cn(
+                        col.align === 'right' && 'num',
+                        col.hideBelow && hideClass[col.hideBelow],
+                        col.className
+                      )}
+                    >
+                      {col.cell(row)}
+                    </td>
+                  ))}
+                </tr>
+              )
+            })}
           </tbody>
-          {footer && rows.length > 0 && (
+          {footer && (
             <tfoot>
               <tr>
                 {onToggleRow && <td />}
@@ -156,6 +185,42 @@ export function SrDataTable<T extends { id: string }>({
             </tfoot>
           )}
         </table>
+
+        {responsive && mobileCard && (
+          <div className="sr-table-cards">
+            {rows.map((row) => {
+              const selected = selectedIds?.has(row.id)
+              const card = mobileCard(row)
+              return (
+                <div
+                  key={row.id}
+                  className={cn('sr-table-card', selected && 'is-selected')}
+                  onClick={() => onRowClick?.(row)}
+                >
+                  <div className="sr-table-card__head">
+                    {onToggleRow && (
+                      <input
+                        type="checkbox"
+                        checked={!!selected}
+                        onChange={(e) => {
+                          e.stopPropagation()
+                          onToggleRow(row.id)
+                        }}
+                        className="mt-0.5 rounded"
+                      />
+                    )}
+                    <div className="sr-table-card__main">
+                      <div className="sr-table-card__order">{card.title}</div>
+                      {card.subtitle && <div className="sr-table-card__sub">{card.subtitle}</div>}
+                    </div>
+                    {card.amount && <div className="sr-table-card__amt">{card.amount}</div>}
+                  </div>
+                  {card.meta && <div className="sr-table-card__row">{card.meta}</div>}
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {showHover && (

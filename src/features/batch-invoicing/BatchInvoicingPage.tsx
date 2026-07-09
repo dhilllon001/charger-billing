@@ -1,13 +1,12 @@
 import { useMemo, useState, useCallback } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { MoreHorizontal, ArrowRight, Sparkles, Check, Minus, Paperclip } from 'lucide-react'
+import { MoreHorizontal, ArrowRight, Sparkles, Check, Minus } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Segment } from '@/components/ui/Segment'
 import { SearchInput } from '@/components/ui/SearchInput'
-import { Pill } from '@/components/ui/Pill'
 import { CopyableMono, TwoLineCell } from '@/components/ui/Table'
-import { WorkflowDots } from '@/components/ui/WorkflowStepper'
+import { WorkflowStageBadge } from '@/components/ui/WorkflowStepper'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { SelectActionBar } from '@/components/layout/SelectActionBar'
 import { FiltersDrawer } from '@/components/layout/FiltersDrawer'
@@ -23,6 +22,7 @@ import {
 import { orders, getStageCounts } from '@/data/mock-orders'
 import { rateValidationFilters, opsValidationFilters } from '@/data/validation-filters'
 import { formatCurrency, formatDate } from '@/lib/format'
+import { cn } from '@/lib/cn'
 import { useUiStore } from '@/stores/ui-store'
 import type { Order, PipelineStage } from '@/data/models'
 import {
@@ -239,6 +239,23 @@ export function BatchInvoicingPage() {
         </div>
         <SrDataTable
         rows={filtered}
+        responsive
+        mobileCard={(row) => ({
+          title: row.orderNo,
+          subtitle: `${row.customer} · ${row.poNo}`,
+          amount: formatCurrency(row.invoiceAmount),
+          meta: (
+            <>
+              {row.workflow && <WorkflowStageBadge workflow={row.workflow} compact />}
+              <span className="sr-table-card__route">
+                <span>{row.pickupCity || row.pickupLocation}</span>
+                <ArrowRight size={11} strokeWidth={2} />
+                <span>{row.deliveryCity || row.deliveryLocation}</span>
+              </span>
+              <span className="sr-status-text">{row.poBillingStatus}</span>
+            </>
+          ),
+        })}
         colFilters={filters.colFilters}
         onColFilterChange={(colFilters) => patch({ colFilters })}
         selectedIds={selectedIds}
@@ -267,22 +284,8 @@ export function BatchInvoicingPage() {
         }
         columns={[
           {
-            key: 'indicators',
-            header: '',
-            cell: (row) => (
-              <div className="flex items-center gap-1">
-                {row.hasPod && (
-                  <Pill variant="blue" dot={false} className="!px-1.5 !py-0">
-                    POD
-                  </Pill>
-                )}
-                <Paperclip size={14} strokeWidth={1.7} className="text-ink-3" />
-              </div>
-            ),
-          },
-          {
             key: 'orderNo',
-            header: 'Order No.',
+            header: 'Order',
             cell: (row) => (
               <span className="rep-name">
                 <CopyableMono value={row.orderNo} sub={`${row.poNo} · ${row.equipment}`} />
@@ -296,82 +299,80 @@ export function BatchInvoicingPage() {
             cell: (row) => <TwoLineCell primary={row.customer} secondary={row.division} />,
           },
           {
-            key: 'poBillingStatus',
-            header: 'PO Billing Status',
-            cell: (row) => {
-              const v = row.poBillingStatus
-              return <Pill variant={v === 'Billed' ? 'green' : v === 'Hold' ? 'orange' : 'blue'}>{v}</Pill>
-            },
-          },
-          {
-            key: 'pickUpDate',
-            header: 'Pick Up Date',
-            cell: (row) => formatDate(row.pickUpDate),
-          },
-          {
-            key: 'deliveryDate',
-            header: 'Delivery Date',
-            cell: (row) => formatDate(row.deliveryDate),
-          },
-          {
             key: 'route',
             header: 'Route',
+            hideBelow: 'lg',
             cell: (row) => (
-              <div className="flex items-center gap-1 text-[12px]">
-                <span className="max-w-[80px] truncate">{row.pickupLocation}</span>
-                <ArrowRight size={12} strokeWidth={1.7} className="shrink-0 text-ink-3" />
-                <span className="max-w-[80px] truncate">{row.deliveryLocation}</span>
+              <div className="flex items-center gap-1 text-[11px] text-[var(--sr-text-secondary)]">
+                <span className="max-w-[72px] truncate">{row.pickupCity || row.pickupLocation}</span>
+                <ArrowRight size={11} strokeWidth={2} className="shrink-0 opacity-50" />
+                <span className="max-w-[72px] truncate">{row.deliveryCity || row.deliveryLocation}</span>
               </div>
             ),
           },
           {
+            key: 'pickUpDate',
+            header: 'Pick Up',
+            hideBelow: 'md',
+            cell: (row) => <span className="text-[11px] tabular-nums">{formatDate(row.pickUpDate)}</span>,
+          },
+          {
+            key: 'deliveryDate',
+            header: 'Delivery',
+            hideBelow: 'md',
+            cell: (row) => <span className="text-[11px] tabular-nums">{formatDate(row.deliveryDate)}</span>,
+          },
+          {
             key: 'invoiceAmount',
-            header: 'I. Amt',
+            header: 'Amount',
             align: 'right',
             filter: { type: 'range' },
             cell: (row) => <span className="mono font-semibold">{formatCurrency(row.invoiceAmount)}</span>,
           },
           {
-            key: 'invoiceStatus',
-            header: 'Invoice Status',
-            cell: (row) => <Pill variant="blue">{row.invoiceStatus}</Pill>,
-          },
-          {
-            key: 'audited',
-            header: 'Audited',
+            key: 'workflow',
+            header: 'Stage',
             cell: (row) =>
-              row.audited ? (
-                <Check size={16} strokeWidth={1.7} className="text-green" />
+              row.workflow ? (
+                <WorkflowStageBadge workflow={row.workflow} />
               ) : (
-                <Minus size={16} strokeWidth={1.7} className="text-ink-3" />
+                <span className="sr-status-text sr-status-text--muted">—</span>
               ),
           },
           {
-            key: 'draftInvoice',
-            header: 'Draft Invoice',
-            cell: (row) => (row.draftInvoice ? row.draftInvoiceNo ?? 'Yes' : 'No'),
-          },
-          {
-            key: 'workflow',
-            header: 'Status',
-            cell: (row) =>
-              row.workflow ? <WorkflowDots workflow={row.workflow} /> : <Pill variant="gray">—</Pill>,
+            key: 'poBillingStatus',
+            header: 'Billing',
+            hideBelow: 'md',
+            cell: (row) => <BillingStatusText status={row.poBillingStatus} />,
           },
           {
             key: 'aiCheck',
-            header: 'AI Check',
-            cell: (row) => <AiCheckPill check={row.aiCheck} />,
+            header: 'AI',
+            hideBelow: 'lg',
+            cell: (row) => <AiCheckText check={row.aiCheck} />,
+          },
+          {
+            key: 'audited',
+            header: 'Aud.',
+            hideBelow: 'lg',
+            cell: (row) =>
+              row.audited ? (
+                <Check size={14} strokeWidth={2} className="text-[var(--sr-positive)]" />
+              ) : (
+                <Minus size={14} strokeWidth={2} className="text-[var(--sr-text-disabled)]" />
+              ),
           },
           {
             key: 'actions',
             header: '',
             cell: (row) => (
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation()
                   navigate(`/orders/${row.id}`)
                 }}
-                className="rounded-lg p-1 hover:bg-black/[0.05]"
+                className="rounded p-1 text-[var(--sr-text-meta)] hover:bg-[var(--sr-surface-2)]"
               >
                 <MoreHorizontal size={16} strokeWidth={1.7} />
               </button>
@@ -398,9 +399,19 @@ export function BatchInvoicingPage() {
   )
 }
 
-function AiCheckPill({ check }: { check: Order['aiCheck'] }) {
-  if (check.state === 'auto_validated') return <Pill variant="ai">✓ Auto-validated</Pill>
-  if (check.state === 'rate_variance') return <Pill variant="orange">Rate variance {check.detail}</Pill>
-  if (check.state === 'pod_missing') return <Pill variant="red">POD missing</Pill>
-  return <Pill variant="gray">Awaiting ops</Pill>
+function BillingStatusText({ status }: { status: string }) {
+  const cls =
+    status === 'Billed'
+      ? 'sr-status-text--positive'
+      : status === 'Hold'
+        ? 'sr-status-text--negative'
+        : ''
+  return <span className={cn('sr-status-text', cls)}>{status}</span>
+}
+
+function AiCheckText({ check }: { check: Order['aiCheck'] }) {
+  if (check.state === 'auto_validated') return <span className="sr-status-text sr-status-text--positive">Validated</span>
+  if (check.state === 'rate_variance') return <span className="sr-status-text">Variance</span>
+  if (check.state === 'pod_missing') return <span className="sr-status-text sr-status-text--negative">No POD</span>
+  return <span className="sr-status-text sr-status-text--muted">Pending</span>
 }

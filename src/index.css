@@ -2,6 +2,7 @@
 @import "./styles/report-tokens.css";
 @import "./styles/sr-table.css";
 @import "./styles/app-shell.css";
+@import "./styles/order-detail.css";
 
 @theme {
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
