@@ -2,6 +2,11 @@
 
 A modern Apple-style billing workspace rebuilt from legacy logistics billing. React 18 + TypeScript + Vite.
 
+## Live
+
+- **Production:** https://charger-billing.vercel.app
+- **GitHub:** https://github.com/dhilllon001/charger-billing
+
 ## Stack
 
 - React 18 + TypeScript + Vite
