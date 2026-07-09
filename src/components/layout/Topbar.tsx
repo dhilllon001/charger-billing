@@ -1,8 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Bell, Settings, Sparkles } from 'lucide-react'
+import { Bell, Settings, Sparkles, Menu } from 'lucide-react'
 import { useUiStore } from '@/stores/ui-store'
-import { cn } from '@/lib/cn'
 
 const pageTitles: Record<string, string> = {
   '/': 'Overview',
@@ -19,9 +18,11 @@ export function Topbar() {
   const location = useLocation()
   const setCopilotOpen = useUiStore((s) => s.setCopilotOpen)
   const setAskAiFocused = useUiStore((s) => s.setAskAiFocused)
-  const askAiFocused = useUiStore((s) => s.askAiFocused)
+  const toggleSidebar = useUiStore((s) => s.toggleSidebar)
   const inputRef = useRef<HTMLInputElement>(null)
-  const page = pageTitles[location.pathname] ?? 'Billing'
+  const page = location.pathname.startsWith('/orders/')
+    ? 'Order Detail'
+    : pageTitles[location.pathname] ?? 'Billing'
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -37,31 +38,44 @@ export function Topbar() {
   }, [setCopilotOpen, setAskAiFocused])
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b border-line frosted px-7">
-      <div className="shrink-0 text-[13px] text-ink-3">
-        Billing <span className="text-ink-3">/</span>{' '}
-        <span className="font-medium text-ink">{page}</span>
+    <header className="sr-topbar sticky top-0 z-40 flex flex-wrap items-center gap-3 px-4 sm:px-6">
+      <button
+        onClick={toggleSidebar}
+        className="sr-topbar__icon-btn lg:hidden"
+        aria-label="Toggle menu"
+      >
+        <Menu size={18} strokeWidth={1.7} />
+      </button>
+
+      <div className="sr-topbar__crumb shrink-0">
+        Billing <span>/</span> <strong>{page}</strong>
       </div>
 
-      <div className="mx-auto w-full max-w-md">
+      <div className="order-3 w-full sm:order-none sm:mx-auto sm:w-auto sm:flex-1 sm:flex sm:justify-center">
         <button
-          onClick={() => { setCopilotOpen(true); setAskAiFocused(true) }}
-          className={cn(
-            'flex w-full items-center gap-2 rounded-xl border border-line bg-white/80 px-4 py-2 text-left text-[13px] text-ink-3 transition-all hover:border-line-strong hover:shadow-[var(--shadow-rest)]',
-            askAiFocused && 'ring-2 ring-accent-soft'
-          )}
+          type="button"
+          onClick={() => {
+            setCopilotOpen(true)
+            setAskAiFocused(true)
+          }}
+          className="sr-topbar__ai-bar"
         >
-          <Sparkles size={16} strokeWidth={1.7} className="ai-gradient-text" />
-          <span>Ask AI — "show unbilled Labatt orders over 30 days"</span>
-          <kbd className="ml-auto rounded-md bg-black/[0.05] px-1.5 py-0.5 text-[10px] font-medium">⌘K</kbd>
+          <Sparkles size={15} strokeWidth={1.7} style={{ color: 'var(--sr-action)' }} />
+          <span className="truncate hidden sm:inline">
+            Ask AI — &ldquo;show unbilled Labatt orders over 30 days&rdquo;
+          </span>
+          <span className="truncate sm:hidden">Ask AI…</span>
+          <kbd className="ml-auto hidden rounded px-1.5 py-0.5 text-[10px] font-semibold sm:inline" style={{ background: 'var(--sr-surface-3)', color: 'var(--sr-text-meta)' }}>
+            ⌘K
+          </kbd>
         </button>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1">
-        <button className="rounded-full p-2 text-ink-2 hover:bg-black/[0.05]">
+      <div className="ml-auto flex shrink-0 items-center gap-0.5">
+        <button type="button" className="sr-topbar__icon-btn" aria-label="Notifications">
           <Bell size={18} strokeWidth={1.7} />
         </button>
-        <button className="rounded-full p-2 text-ink-2 hover:bg-black/[0.05]">
+        <button type="button" className="sr-topbar__icon-btn" aria-label="Settings">
           <Settings size={18} strokeWidth={1.7} />
         </button>
       </div>

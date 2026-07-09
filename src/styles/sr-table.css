@@ -1,0 +1,297 @@
+/* Enterprise reporting table — .sr-table* */
+
+.sr-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--sr-border-2);
+  border-radius: var(--sr-radius-lg);
+  background: var(--sr-surface-1);
+}
+
+.sr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--sr-font-body);
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--sr-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.sr-table th {
+  background: var(--sr-surface-2);
+  border-bottom: 2px solid var(--sr-border-2);
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sr-text-meta);
+  white-space: nowrap;
+}
+
+.sr-table td {
+  padding: 6px 12px;
+  height: var(--sr-row-sm);
+  border-bottom: 1px solid var(--sr-border-1);
+  vertical-align: middle;
+}
+
+.sr-table tbody tr:nth-child(even) {
+  background: var(--sr-table-zebra);
+}
+
+.sr-table-row--hoverable {
+  transition: background var(--sr-duration) ease-out,
+    box-shadow var(--sr-duration) ease-out;
+}
+
+.sr-table-row--hoverable:hover,
+.sr-table-row--hoverable.is-hovered {
+  background: var(--sr-table-hover-accent) !important;
+  box-shadow: inset 3px 0 0 var(--sr-action);
+}
+
+.sr-table-row--clickable {
+  cursor: pointer;
+}
+
+.sr-table tr.is-selected {
+  background: var(--sr-table-selected) !important;
+}
+
+.sr-table tr.is-selected:hover {
+  background: var(--sr-table-hover-accent) !important;
+}
+
+.sr-table .num,
+.sr-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-table .mono {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+.sr-table .rep-name {
+  font-weight: 600;
+  color: var(--sr-text-primary);
+}
+
+.sr-table .val-positive {
+  color: var(--sr-positive);
+  font-weight: 600;
+}
+
+.sr-table .val-negative {
+  color: var(--sr-negative);
+  font-weight: 600;
+}
+
+.sr-table tfoot td {
+  background: var(--sr-surface-2);
+  border-top: 2px solid var(--sr-border-2);
+  font-weight: 700;
+  padding: 8px 12px;
+}
+
+.sr-table-empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--sr-text-meta);
+  font-size: var(--sr-text-body);
+}
+
+/* Row hover popover */
+.sr-row-popover {
+  position: fixed;
+  z-index: 10050;
+  pointer-events: none;
+  min-width: 220px;
+  max-width: 320px;
+  padding: 12px 14px;
+  background: var(--sr-surface-1);
+  border: 2px solid var(--sr-border-2);
+  border-radius: var(--sr-radius-lg);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+  animation: sr-popover-in var(--sr-duration) var(--sr-ease);
+}
+
+@keyframes sr-popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sr-row-popover__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sr-text-primary);
+}
+
+.sr-row-popover__subtitle {
+  font-size: 11px;
+  color: var(--sr-text-meta);
+  margin-top: 2px;
+}
+
+.sr-row-popover__grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--sr-border-1);
+}
+
+.sr-row-popover__grid dt {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sr-text-meta);
+}
+
+.sr-row-popover__grid dd {
+  margin: 0;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--sr-text-secondary);
+}
+
+/* Filter strip */
+.sr-filter-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--sr-surface-2);
+  border: 1px solid var(--sr-border-1);
+  border-radius: var(--sr-radius-lg);
+}
+
+.sr-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sr-text-secondary);
+  background: var(--sr-surface-1);
+  border: 1px solid var(--sr-border-2);
+  border-radius: var(--sr-radius-pill);
+  cursor: pointer;
+  transition: all 120ms ease-out;
+}
+
+.sr-filter-chip:hover {
+  border-color: var(--sr-border-3);
+}
+
+.sr-filter-chip.is-active {
+  background: var(--sr-text-primary);
+  border-color: var(--sr-text-primary);
+  color: #fff;
+}
+
+.sr-applied-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+  font-size: 11px;
+  color: var(--sr-text-meta);
+}
+
+.sr-applied-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--sr-surface-2);
+  border: 1px solid var(--sr-border-1);
+  border-radius: var(--sr-radius-pill);
+  color: var(--sr-text-secondary);
+}
+
+.sr-applied-pill button {
+  display: flex;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--sr-text-meta);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.sr-applied-pill button:hover {
+  color: var(--sr-negative);
+}
+
+.sr-col-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-left: 4px;
+  padding: 0;
+  border: none;
+  border-radius: var(--sr-radius-sm);
+  background: transparent;
+  color: var(--sr-text-meta);
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.sr-col-filter-btn.is-active {
+  color: var(--sr-action);
+  background: rgba(30, 95, 170, 0.1);
+}
+
+.sr-col-filter-popover {
+  position: absolute;
+  z-index: 100;
+  margin-top: 4px;
+  min-width: 200px;
+  padding: 12px;
+  background: var(--sr-surface-1);
+  border: 2px solid var(--sr-border-2);
+  border-radius: var(--sr-radius-lg);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+.sr-col-filter-popover input,
+.sr-col-filter-popover select {
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+  border: 1px solid var(--sr-border-2);
+  border-radius: var(--sr-radius-md);
+  outline: none;
+}
+
+.sr-col-filter-popover input:focus {
+  box-shadow: 0 0 0 2px var(--sr-focus);
+}

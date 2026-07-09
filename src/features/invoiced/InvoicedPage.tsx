@@ -9,6 +9,7 @@ import { FilterChip } from '@/components/ui/FilterChip'
 import { Switch } from '@/components/ui/Switch'
 import { Pill } from '@/components/ui/Pill'
 import { DataTable, CopyableMono } from '@/components/ui/Table'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { invoices, getInvoiceSegmentCounts } from '@/data/mock-invoices'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { useUiStore } from '@/stores/ui-store'
@@ -45,21 +46,6 @@ export function InvoicedPage() {
   }, [segment, search])
 
   const selectedCount = Object.keys(rowSelection).filter((k) => rowSelection[k]).length
-
-  const deliveryLabels: Record<Invoice['deliveryStatus'], { label: string; variant: 'green' | 'blue' | 'gray' | 'orange' }> = {
-    emailed_read: { label: 'Emailed · read', variant: 'green' },
-    sent_unread: { label: 'Sent · unread', variant: 'blue' },
-    not_sent: { label: 'Not sent', variant: 'gray' },
-    uploaded: { label: 'Uploaded', variant: 'orange' },
-  }
-
-  const paymentLabels: Record<Invoice['paymentStatus'], { label: string; variant: 'green' | 'blue' | 'red' | 'gray' | 'orange' }> = {
-    open: { label: 'Open', variant: 'blue' },
-    paid: { label: 'Paid', variant: 'green' },
-    overdue: { label: `Overdue · ${0}d`, variant: 'red' },
-    draft: { label: 'Draft', variant: 'gray' },
-    applied: { label: 'Applied', variant: 'green' },
-  }
 
   const columns = useMemo(() => [
     columnHelper.display({
@@ -105,18 +91,18 @@ export function InvoicedPage() {
     columnHelper.accessor('deliveryStatus', {
       header: 'Delivery status',
       cell: ({ getValue }) => {
-        const d = deliveryLabels[getValue()]
-        return <Pill variant={d.variant}>{d.label}</Pill>
+        const map = { emailed_read: ['Emailed · read', 'green'], sent_unread: ['Sent · unread', 'blue'], not_sent: ['Not sent', 'gray'], uploaded: ['Uploaded', 'orange'] } as const
+        const [label, variant] = map[getValue()]
+        return <Pill variant={variant}>{label}</Pill>
       },
     }),
     columnHelper.accessor('paymentStatus', {
       header: 'Payment',
       cell: ({ row }) => {
-        const p = paymentLabels[row.original.paymentStatus]
-        const label = row.original.paymentStatus === 'overdue' && row.original.overdueDays
-          ? `Overdue · ${row.original.overdueDays}d`
-          : p.label
-        return <Pill variant={p.variant}>{label}</Pill>
+        const p = row.original.paymentStatus
+        const label = p === 'overdue' && row.original.overdueDays ? `Overdue · ${row.original.overdueDays}d` : p.charAt(0).toUpperCase() + p.slice(1)
+        const variant = p === 'paid' ? 'green' : p === 'overdue' ? 'red' : p === 'open' ? 'blue' : 'gray'
+        return <Pill variant={variant}>{label}</Pill>
       },
     }),
     columnHelper.display({
@@ -127,57 +113,36 @@ export function InvoicedPage() {
   ], [])
 
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-[26px] font-bold tracking-[-0.022em]">Invoiced</h1>
-          <p className="mt-1 text-[13px] text-ink-3">Manage sent invoices, delivery status, and payments.</p>
-        </div>
-        <Button
-          size="sm"
-          disabled={selectedCount === 0}
-          onClick={() => addToast(`Sent ${selectedCount} invoices to customers`)}
-        >
-          Send to customer
-        </Button>
-      </div>
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 sm:space-y-5">
+      <PageHeader
+        title="Invoiced"
+        subtitle="Track sent invoices, delivery status, payments, and credits."
+        actions={
+          <Button size="sm" disabled={selectedCount === 0} onClick={() => addToast(`Sent ${selectedCount} invoices to customers`)}>
+            Send to customer
+          </Button>
+        }
+      />
 
-      <Segment items={segments} value={segment} onChange={setSegment} />
+      <div className="overflow-x-auto"><Segment items={segments} value={segment} onChange={setSegment} className="min-w-max" /></div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Search invoices…"
-          className="w-72"
-          scope={{
-            value: 'invoice',
-            onChange: () => {},
-            options: [{ value: 'invoice', label: 'Invoice #' }],
-          }}
-        />
-        <FilterChip label="Customer" />
-        <FilterChip label="Invoice Type" />
-        <FilterChip label="Last 14 days" active onClear={() => {}} />
-        <div className="flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1 text-[12px]">
-          <span className="text-ink-2">Include location data</span>
-          <Switch checked={includeLocation} onChange={setIncludeLocation} />
-        </div>
-        <div className="ml-auto">
+      <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search invoices…" className="w-full lg:w-72" scope={{ value: 'invoice', onChange: () => {}, options: [{ value: 'invoice', label: 'Invoice #' }] }} />
+        <div className="flex flex-wrap items-center gap-2">
+          <FilterChip label="Customer" />
+          <FilterChip label="Invoice Type" />
+          <FilterChip label="Last 14 days" active onClear={() => {}} />
+          <div className="flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1 text-[12px]">
+            <span className="text-ink-2">Include location data</span>
+            <Switch checked={includeLocation} onChange={setIncludeLocation} />
+          </div>
           <Button variant="ghost" size="sm" onClick={() => exportToCsv(filtered as unknown as Record<string, unknown>[], 'invoices.csv')}>
             <Download size={14} strokeWidth={1.7} /> Export
           </Button>
         </div>
       </div>
 
-      <DataTable
-        data={filtered}
-        columns={columns}
-        gridId="invoiced"
-        getRowId={(row) => row.id}
-        rowSelection={rowSelection}
-        onRowSelectionChange={setRowSelection}
-      />
+      <DataTable data={filtered} columns={columns} gridId="invoiced" getRowId={(row) => row.id} rowSelection={rowSelection} onRowSelectionChange={setRowSelection} />
     </motion.div>
   )
 }

@@ -11,16 +11,18 @@ interface SearchInputProps {
 
 export function SearchInput({ value, onChange, placeholder, className, scope }: SearchInputProps) {
   return (
-    <div className={cn('relative flex items-center', className)}>
-      <Search size={16} strokeWidth={1.7} className="absolute left-3 text-ink-3" />
+    <div className={cn('sr-search', scope && 'sr-search--scoped', className)}>
+      <Search size={15} strokeWidth={2} className="sr-search__icon" />
       {scope && (
         <select
           value={scope.value}
           onChange={(e) => scope.onChange(e.target.value)}
-          className="absolute left-9 z-10 border-none bg-transparent text-[11px] font-medium text-ink-3 outline-none"
+          className="sr-search__scope"
         >
           {scope.options.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
           ))}
         </select>
       )}
@@ -29,10 +31,6 @@ export function SearchInput({ value, onChange, placeholder, className, scope }: 
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={cn(
-          'h-9 w-full rounded-[10px] border border-line bg-white pl-9 pr-3 text-[13px] text-ink placeholder:text-ink-3 outline-none transition-shadow focus:shadow-[0_0_0_3px_var(--accent-soft)]',
-          scope && 'pl-28'
-        )}
       />
     </div>
   )

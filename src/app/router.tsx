@@ -8,6 +8,7 @@ import { EmailDeliveryPage } from '@/features/email-delivery/EmailDeliveryPage'
 import { RatesFuelPage } from '@/features/rates-fuel/RatesFuelPage'
 import { CustomersPage } from '@/features/customers/CustomersPage'
 import { PermissionsPage } from '@/features/permissions/PermissionsPage'
+import { OrderDetailPage } from '@/features/orders/OrderDetailPage'
 
 export function AppRouter() {
   return (
@@ -16,6 +17,7 @@ export function AppRouter() {
         <Route element={<AppShell />}>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/batch-invoicing" element={<BatchInvoicingPage />} />
+          <Route path="/orders/:orderId" element={<OrderDetailPage />} />
           <Route path="/consolidated" element={<ConsolidatedPage />} />
           <Route path="/invoiced" element={<InvoicedPage />} />
           <Route path="/email-delivery" element={<EmailDeliveryPage />} />

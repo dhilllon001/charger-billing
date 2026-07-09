@@ -1,22 +1,25 @@
 @import "tailwindcss";
+@import "./styles/report-tokens.css";
+@import "./styles/sr-table.css";
+@import "./styles/app-shell.css";
 
 @theme {
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
-  --color-bg: #F5F5F7;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  --color-bg: #E0E4EA;
   --color-card: #FFFFFF;
-  --color-ink: #1D1D1F;
-  --color-ink-2: #515154;
-  --color-ink-3: #86868B;
-  --color-line: rgba(0, 0, 0, 0.07);
-  --color-line-strong: rgba(0, 0, 0, 0.12);
-  --color-accent: #0071E3;
-  --color-accent-soft: #EAF3FE;
-  --color-green: #1FA85B;
-  --color-green-soft: #E7F6EE;
+  --color-ink: #0F1A2A;
+  --color-ink-2: #3D4A5C;
+  --color-ink-3: #6B7685;
+  --color-line: #DDE1E8;
+  --color-line-strong: #CDD3DC;
+  --color-accent: #1E5FAA;
+  --color-accent-soft: #EBF3FC;
+  --color-green: #1F7A43;
+  --color-green-soft: #E8F4EC;
   --color-orange: #C77400;
   --color-orange-soft: #FDF1E0;
-  --color-red: #D93025;
-  --color-red-soft: #FBEBEA;
+  --color-red: #A32B22;
+  --color-red-soft: #FBEAEA;
   --color-purple: #6E5BE8;
   --radius-btn: 9999px;
   --radius-input: 10px;
@@ -29,21 +32,21 @@
 }
 
 :root {
-  --bg: #F5F5F7;
+  --bg: #E0E4EA;
   --card: #FFFFFF;
-  --ink: #1D1D1F;
-  --ink-2: #515154;
-  --ink-3: #86868B;
-  --line: rgba(0, 0, 0, 0.07);
-  --line-strong: rgba(0, 0, 0, 0.12);
-  --accent: #0071E3;
-  --accent-soft: #EAF3FE;
-  --green: #1FA85B;
-  --green-soft: #E7F6EE;
+  --ink: #0F1A2A;
+  --ink-2: #3D4A5C;
+  --ink-3: #6B7685;
+  --line: #DDE1E8;
+  --line-strong: #CDD3DC;
+  --accent: #1E5FAA;
+  --accent-soft: #EBF3FC;
+  --green: #1F7A43;
+  --green-soft: #E8F4EC;
   --orange: #C77400;
   --orange-soft: #FDF1E0;
-  --red: #D93025;
-  --red-soft: #FBEBEA;
+  --red: #A32B22;
+  --red-soft: #FBEAEA;
   --purple: #6E5BE8;
   --ai-grad: linear-gradient(120deg, #0A84FF, #6E5BE8 55%, #BF5AF2);
 }
@@ -107,9 +110,9 @@ body {
 }
 
 .frosted {
-  background: rgba(245, 245, 247, 0.8);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .frosted-panel {

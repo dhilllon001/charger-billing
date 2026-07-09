@@ -11,6 +11,48 @@ export type PipelineStage =
 
 export type OrderStatus = 'ready' | 'needs_review' | 'blocked' | 'in_validation'
 
+export type WorkflowStageStatus = 'passed' | 'failed' | 'pending' | 'waiting' | 'warning'
+
+export interface OrderWorkflow {
+  rateValidation: { status: WorkflowStageStatus; checksPassed: number; checksTotal: number; detail?: string }
+  operationValidation: { status: WorkflowStageStatus; checksPassed: number; checksTotal: number; detail?: string }
+  podPending: { status: WorkflowStageStatus; checksPassed: number; checksTotal: number; detail?: string }
+  autoInvoicing: { status: WorkflowStageStatus; label: string }
+  invoiceDelivery: { status: WorkflowStageStatus; label: string }
+  accountingSync: { status: WorkflowStageStatus; label: string }
+}
+
+export interface ShipperStop {
+  label: string
+  facility: string
+  address: string
+  city: string
+  state: string
+  zip: string
+  referenceNo?: string
+  schedule: string
+  actual?: string
+  notes?: string
+}
+
+export interface OrderCharge {
+  item: string
+  description: string
+  price: number
+  qty: number
+  taxCode?: string
+  total: number
+  createdOn: string
+  createdBy: string
+}
+
+export interface OrderDocument {
+  category: string
+  files: { name: string; type: string }[]
+}
+
+export type ValidationGroup = 'no_error' | 'operation_validation' | 'rate_validation'
+
 export type AiCheck = {
   state: 'auto_validated' | 'rate_variance' | 'pod_missing' | 'awaiting_ops'
   detail?: string
@@ -48,6 +90,25 @@ export interface Order {
   equipment: 'FTL' | 'LTL' | 'Reefer' | 'Dry Van'
   stage: PipelineStage
   aiCheck: AiCheck
+  currency?: 'CAD' | 'USD' | 'MXN'
+  probillId?: string
+  hasPod?: boolean
+  validationGroup?: ValidationGroup
+  validationFilter?: string
+  workflow?: OrderWorkflow
+  charges?: OrderCharge[]
+  documents?: OrderDocument[]
+  lane?: string
+  dispatcher?: string
+  billToAddress?: string
+  instruction?: string
+  salesRep?: string
+  reasonForLateInvoice?: string
+  trailerNo?: string
+  distance?: string
+  pickup?: ShipperStop
+  delivery?: ShipperStop
+  selectedDocument?: string
 }
 
 export interface ConsolidatedBatch {
@@ -179,4 +240,39 @@ export interface DashboardKpi {
   delta: string
   deltaType: 'up' | 'down' | 'neutral'
   icon: string
+}
+
+export interface EmailTemplate {
+  id: string
+  name: string
+  template: string
+  configurationType: 'Subject' | 'Body'
+  modifiedBy: string
+  modifiedOn: string
+}
+
+export interface FreightRate {
+  id: string
+  customerId: string
+  origin: string
+  destination: string
+  type: string
+  currency: 'CAD' | 'USD' | 'MXN'
+  distance: string
+  frtMethod: string
+  multiProbill: boolean
+  gallons?: number
+  dryVanExp?: number
+  reeferExp?: number
+  triAxleExp?: number
+  heaterExp?: number
+  updatedBy: string
+  active: boolean
+}
+
+export interface CustomerConfig {
+  id: string
+  name: string
+  lanes: number
+  orders: number
 }

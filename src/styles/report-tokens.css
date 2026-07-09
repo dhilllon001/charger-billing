@@ -1,0 +1,79 @@
+/* ChargerFleet / Pearl reporting design tokens — sr- prefix */
+
+:root {
+  /* Typography */
+  --sr-font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --sr-font-display: 'Inter', sans-serif;
+
+  --sr-text-display: 32px;
+  --sr-text-h1: 24px;
+  --sr-text-h2: 20px;
+  --sr-text-h3: 16px;
+  --sr-text-h4: 14px;
+  --sr-text-body: 13px;
+  --sr-text-small: 12px;
+  --sr-text-micro: 11px;
+  --sr-text-eyebrow: 10px;
+
+  /* Light theme — report surfaces */
+  --sr-bg-app: #E0E4EA;
+  --sr-surface-1: #FFFFFF;
+  --sr-surface-2: #F4F5F7;
+  --sr-surface-3: #D4D9E1;
+
+  --sr-text-primary: #0F1A2A;
+  --sr-text-secondary: #3D4A5C;
+  --sr-text-meta: #6B7685;
+  --sr-text-disabled: #A4ADBA;
+
+  --sr-border-1: #DDE1E8;
+  --sr-border-2: #CDD3DC;
+  --sr-border-3: #B8BFC9;
+
+  --sr-action: #1E5FAA;
+  --sr-action-hover: #184E8D;
+  --sr-focus: #5795E3;
+
+  --sr-positive: #1F7A43;
+  --sr-negative: #A32B22;
+
+  --sr-table-zebra: #F7F8FA;
+  --sr-table-hover: #EEF0F4;
+  --sr-table-selected: #EBF3FC;
+  --sr-table-hover-accent: #E8F1FB;
+
+  /* Dark sidebar */
+  --sr-nav-bg: #1a1d24;
+  --sr-nav-text: #E8EDF3;
+  --sr-nav-text-2: #B4BFCD;
+  --sr-nav-meta: #7C8898;
+  --sr-nav-divider: rgba(255, 255, 255, 0.06);
+  --sr-nav-hover: rgba(255, 255, 255, 0.06);
+  --sr-nav-active: rgba(87, 149, 227, 0.14);
+  --sr-nav-active-bar: #5795E3;
+
+  /* Spacing */
+  --sr-space-1: 4px;
+  --sr-space-2: 8px;
+  --sr-space-3: 12px;
+  --sr-space-4: 16px;
+  --sr-space-5: 20px;
+  --sr-space-6: 24px;
+  --sr-space-8: 32px;
+  --sr-space-12: 48px;
+
+  /* Radii */
+  --sr-radius-sm: 3px;
+  --sr-radius-md: 6px;
+  --sr-radius-lg: 10px;
+  --sr-radius-pill: 999px;
+
+  /* Row heights */
+  --sr-row-compact: 28px;
+  --sr-row-sm: 32px;
+  --sr-row-comfortable: 40px;
+
+  /* Motion */
+  --sr-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --sr-duration: 140ms;
+}

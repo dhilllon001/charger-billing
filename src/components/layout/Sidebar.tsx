@@ -29,108 +29,92 @@ export function Sidebar() {
   const toggle = useUiStore((s) => s.toggleSidebar)
 
   return (
-    <aside
-      className={cn(
-        'flex h-full shrink-0 flex-col border-r border-line bg-[#FBFBFD] transition-all duration-300 ease-[var(--ease-apple)]',
-        collapsed ? 'w-[68px]' : 'w-[236px]'
+    <>
+      {!collapsed && (
+        <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={toggle} />
       )}
-    >
-      <div className={cn('border-b border-line px-4 py-5', collapsed && 'px-2')}>
-        {!collapsed ? (
-          <>
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl ai-gradient">
-                <Sparkles size={16} strokeWidth={1.7} className="text-white" />
-              </div>
-              <div>
-                <div className="text-[13px] font-bold text-ink">Charger Billing</div>
-                <div className="text-[11px] text-ink-3">AI Billing Workspace</div>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-xl ai-gradient">
-            <Sparkles size={16} strokeWidth={1.7} className="text-white" />
-          </div>
+      <aside
+        className={cn(
+          'sr-sidebar fixed inset-y-0 left-0 z-50 flex h-full w-[240px] shrink-0 flex-col transition-transform duration-300 ease-[var(--ease-apple)] lg:relative lg:z-auto',
+          collapsed ? '-translate-x-full lg:translate-x-0' : 'translate-x-0'
         )}
-      </div>
-
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
-        <NavGroup label="Workspace" collapsed={collapsed}>
-          {workspaceNav.map((item) => (
-            <NavItem key={item.to} {...item} collapsed={collapsed} />
-          ))}
-        </NavGroup>
-        <NavGroup label="Configuration" collapsed={collapsed} className="mt-6">
-          {configNav.map((item) => (
-            <NavItem key={item.to} {...item} collapsed={collapsed} />
-          ))}
-        </NavGroup>
-      </nav>
-
-      <div className="border-t border-line p-3">
-        <div className={cn('flex items-center gap-2.5 rounded-xl px-2 py-2', collapsed && 'justify-center')}>
-          <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
-            style={{ background: avatarColor('Harmandeep Singh') }}
-          >
-            {initials('Harmandeep Singh')}
-          </div>
-          {!collapsed && (
-            <div className="min-w-0">
-              <div className="truncate text-[12px] font-semibold">Harmandeep Singh</div>
-              <div className="truncate text-[11px] text-ink-3">Billing SuperAdmin</div>
+      >
+        <div className="border-b border-[var(--sr-nav-divider)] px-4 py-5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--sr-action)] shadow-sm">
+              <Sparkles size={17} strokeWidth={1.8} className="text-white" />
             </div>
-          )}
+            <div>
+              <div className="sr-sidebar__brand-title">Charger Billing</div>
+              <div className="sr-sidebar__brand-sub">AI Billing Workspace</div>
+            </div>
+          </div>
         </div>
-        <button
-          onClick={toggle}
-          className="mt-2 flex w-full items-center justify-center rounded-lg py-1.5 text-ink-3 hover:bg-black/[0.04] lg:hidden"
-        >
-          <ChevronLeft size={16} strokeWidth={1.7} className={cn(collapsed && 'rotate-180')} />
-        </button>
-      </div>
-    </aside>
+
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          <NavGroup label="Workspace">
+            {workspaceNav.map((item) => (
+              <NavItem key={item.to} {...item} />
+            ))}
+          </NavGroup>
+          <NavGroup label="Configuration" className="mt-6">
+            {configNav.map((item) => (
+              <NavItem key={item.to} {...item} />
+            ))}
+          </NavGroup>
+        </nav>
+
+        <div className="sr-sidebar__footer p-3">
+          <div className="flex items-center gap-2.5 rounded-lg px-2 py-2">
+            <div
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
+              style={{ background: avatarColor('Harmandeep Singh') }}
+            >
+              {initials('Harmandeep Singh')}
+            </div>
+            <div className="min-w-0">
+              <div className="sr-sidebar__user-name truncate">Harmandeep Singh</div>
+              <div className="sr-sidebar__user-role truncate">Billing SuperAdmin</div>
+            </div>
+          </div>
+          <button
+            onClick={toggle}
+            className="mt-2 flex w-full items-center justify-center rounded-md py-1.5 text-[var(--sr-nav-meta)] hover:bg-[var(--sr-nav-hover)] lg:hidden"
+          >
+            <ChevronLeft size={16} strokeWidth={1.7} />
+          </button>
+        </div>
+      </aside>
+    </>
   )
 }
 
-function NavGroup({ label, children, collapsed, className }: { label: string; children: React.ReactNode; collapsed: boolean; className?: string }) {
+function NavGroup({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={className}>
-      {!collapsed && <div className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-3">{label}</div>}
+      <div className="sr-sidebar__eyebrow">{label}</div>
       <div className="space-y-0.5">{children}</div>
     </div>
   )
 }
 
-function NavItem({ to, icon: Icon, label, count, alert, collapsed }: {
-  to: string; icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>
-  label: string; count?: number; alert?: number; collapsed?: boolean
+function NavItem({ to, icon: Icon, label, count, alert }: {
+  to: string
+  icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>
+  label: string
+  count?: number
+  alert?: number
 }) {
   return (
     <NavLink
       to={to}
       end={to === '/'}
-      className={({ isActive }) =>
-        cn(
-          'flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] font-medium transition-all duration-150',
-          isActive ? 'bg-white text-ink shadow-[var(--shadow-rest)]' : 'text-ink-2 hover:bg-white/60 hover:text-ink',
-          collapsed && 'justify-center px-2'
-        )
-      }
+      className={({ isActive }) => cn('sr-sidebar__nav-link', isActive && 'is-active')}
     >
-      {({ isActive }) => (
-        <>
-          <Icon size={18} strokeWidth={1.7} className={isActive ? 'text-accent' : ''} />
-          {!collapsed && (
-            <>
-              <span className="flex-1">{label}</span>
-              {count != null && <span className="text-[11px] tabular-nums text-ink-3">{count}</span>}
-              {alert != null && <span className="rounded-full bg-orange-soft px-1.5 text-[10px] font-semibold text-orange">{alert}</span>}
-            </>
-          )}
-        </>
-      )}
+      <Icon size={17} strokeWidth={1.7} />
+      <span className="flex-1">{label}</span>
+      {count != null && <span className="sr-nav-count">{count.toLocaleString()}</span>}
+      {alert != null && <span className="sr-nav-alert">{alert}</span>}
     </NavLink>
   )
 }

@@ -27,7 +27,7 @@ interface UiState {
 }
 
 export const useUiStore = create<UiState>((set, get) => ({
-  sidebarCollapsed: false,
+  sidebarCollapsed: true,
   copilotOpen: false,
   askAiFocused: false,
   toasts: [],

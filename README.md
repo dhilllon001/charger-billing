@@ -1,6 +1,6 @@
 # Charger Billing — AI Billing Workspace
 
-A modern Apple-style billing workspace rebuilt from legacy logistics billing. React 18 + TypeScript + Vite.
+Enterprise billing workspace with ChargerFleet / Pearl design system. React 19 + TypeScript + Vite.
 
 ## Live
 
@@ -9,10 +9,10 @@ A modern Apple-style billing workspace rebuilt from legacy logistics billing. Re
 
 ## Stack
 
-- React 18 + TypeScript + Vite
-- Tailwind CSS v4 (design tokens in `src/index.css`)
+- React 19 + TypeScript + Vite
+- Tailwind CSS v4 + ChargerFleet design tokens (`src/styles/`)
 - Framer Motion (page transitions, drawers, toasts)
-- TanStack Table v8 (sorting, filtering, column visibility, layouts)
+- TanStack Table v8 + SrDataTable reporting grid
 - Lucide React icons
 - Zustand (UI state)
 - React Router
@@ -31,13 +31,21 @@ Open http://localhost:5173
 | Route | Module |
 |-------|--------|
 | `/` | Overview (dashboard, KPIs, AI insights) |
-| `/batch-invoicing` | Batch invoicing pipeline |
+| `/batch-invoicing` | Batch invoicing pipeline + enterprise table |
+| `/orders/:orderId` | Full-page order detail |
 | `/consolidated` | Consolidated invoicing (master-detail) |
 | `/invoiced` | Invoiced orders |
 | `/email-delivery` | Email delivery rules |
 | `/rates-fuel` | Fuel indices & expired rates |
 | `/customers` | Customer management |
 | `/permissions` | User groups & permissions |
+
+## Design system
+
+- `src/styles/report-tokens.css` — `--sr-*` ChargerFleet / Pearl tokens
+- `src/styles/sr-table.css` — enterprise reporting table + filters
+- `src/styles/app-shell.css` — dark sidebar, topbar, report layout
+- `src/components/report/` — SrDataTable, filters, row hover popover
 
 ## AI Features
 

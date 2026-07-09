@@ -7,9 +7,12 @@ import { FilterChip } from '@/components/ui/FilterChip'
 import { Switch } from '@/components/ui/Switch'
 import { Pill } from '@/components/ui/Pill'
 import { Modal, ModalFooter } from '@/components/ui/Modal'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { emailRules } from '@/data/mock-email'
+import { emailTemplates } from '@/data/mock-email-templates'
+import { formatDate } from '@/lib/format'
 import { useUiStore } from '@/stores/ui-store'
-import type { EmailRule } from '@/data/models'
+import type { EmailRule, EmailTemplate } from '@/data/models'
 
 const emptyRule: Omit<EmailRule, 'id'> = {
   billingCustomer: '',
@@ -35,6 +38,9 @@ export function EmailDeliveryPage() {
   const [editing, setEditing] = useState<EmailRule | null>(null)
   const [form, setForm] = useState(emptyRule)
   const [emailInput, setEmailInput] = useState('')
+  const [templatesOpen, setTemplatesOpen] = useState(false)
+  const [templates, setTemplates] = useState(emailTemplates)
+  const [templateForm, setTemplateForm] = useState<Partial<EmailTemplate>>({ configurationType: 'Subject' })
   const addToast = useUiStore((s) => s.addToast)
 
   const filtered = rules.filter((r) =>
@@ -73,18 +79,32 @@ export function EmailDeliveryPage() {
   const sendViaVariant = (v: EmailRule['sendVia']) =>
     v === 'Email' ? 'blue' : v === 'Upload' ? 'orange' : 'gray'
 
+  const saveTemplate = () => {
+    if (!templateForm.name || !templateForm.template) return
+    setTemplates([...templates, {
+      id: `et-${Date.now()}`,
+      name: templateForm.name,
+      template: templateForm.template,
+      configurationType: templateForm.configurationType as 'Subject' | 'Body',
+      modifiedBy: 'harmandeep.singh@chargerlogistics.com',
+      modifiedOn: new Date().toISOString(),
+    }])
+    setTemplateForm({ configurationType: 'Subject' })
+    addToast('Email template saved')
+  }
+
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-[26px] font-bold tracking-[-0.022em]">Email Delivery</h1>
-          <p className="mt-1 text-[13px] text-ink-3">Configure invoice delivery rules for billing customers.</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="ghost" size="sm">Email templates</Button>
-          <Button size="sm" onClick={openAdd}><Plus size={14} strokeWidth={1.7} /> Add rule</Button>
-        </div>
-      </div>
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 sm:space-y-5">
+      <PageHeader
+        title="Email Delivery"
+        subtitle="3,638 delivery rules — configure how invoices reach billing customers."
+        actions={
+          <>
+            <Button variant="ghost" size="sm" onClick={() => setTemplatesOpen(true)}>Email templates</Button>
+            <Button size="sm" onClick={openAdd}><Plus size={14} strokeWidth={1.7} /> Add rule</Button>
+          </>
+        }
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         <SearchInput value={search} onChange={setSearch} placeholder="Search billing customer…" className="w-72" />
@@ -94,19 +114,14 @@ export function EmailDeliveryPage() {
       </div>
 
       <div className="overflow-hidden rounded-[16px] bg-card shadow-[var(--shadow-rest)]">
-        <div className="grid grid-cols-[1.5fr_1.2fr_auto_auto_auto_auto] gap-4 border-b border-line bg-[#FCFCFD] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.05em] text-ink-3">
-          <span>Billing Customer</span>
-          <span>Recipients</span>
-          <span>Send via</span>
-          <span>Frequency</span>
-          <span>Attachment</span>
-          <span>Active</span>
+        <div className="hidden border-b border-line bg-[#FCFCFD] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.05em] text-ink-3 md:grid md:grid-cols-[1.5fr_1.2fr_auto_auto_auto_auto] md:gap-4">
+          <span>Billing Customer</span><span>Recipients</span><span>Send via</span><span>Frequency</span><span>Attachment</span><span>Active</span>
         </div>
         {filtered.map((rule) => (
           <div
             key={rule.id}
             onClick={() => openEdit(rule)}
-            className="grid cursor-pointer grid-cols-[1.5fr_1.2fr_auto_auto_auto_auto] items-center gap-4 border-b border-line px-4 py-3.5 transition-colors hover:bg-[#F7F9FC]"
+            className="cursor-pointer border-b border-line px-4 py-3.5 transition-colors hover:bg-[#F7F9FC] md:grid md:grid-cols-[1.5fr_1.2fr_auto_auto_auto_auto] md:items-center md:gap-4"
           >
             <div>
               <div className="flex items-center gap-1.5 font-semibold text-ink">
@@ -198,6 +213,46 @@ export function EmailDeliveryPage() {
                 {label}
               </label>
             ))}
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={templatesOpen} onClose={() => setTemplatesOpen(false)} title="Email Configuration Template" className="max-w-2xl">
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Name *">
+              <input value={templateForm.name ?? ''} onChange={(e) => setTemplateForm({ ...templateForm, name: e.target.value })} className="field-input" placeholder="Enter Name" />
+            </Field>
+            <Field label="Configuration Type *">
+              <select value={templateForm.configurationType} onChange={(e) => setTemplateForm({ ...templateForm, configurationType: e.target.value as 'Subject' | 'Body' })} className="field-input">
+                <option value="Subject">Subject</option>
+                <option value="Body">Body</option>
+              </select>
+            </Field>
+          </div>
+          <Field label="Template *">
+            <textarea value={templateForm.template ?? ''} onChange={(e) => setTemplateForm({ ...templateForm, template: e.target.value })} className="field-input min-h-[80px]" placeholder="Enter Template Text — use {Invoice}, {PONO}, {Customer}" />
+          </Field>
+          <div className="flex justify-end"><Button size="sm" onClick={saveTemplate}>Save</Button></div>
+          <div className="max-h-64 overflow-y-auto rounded-xl border border-line">
+            <table className="w-full text-[12px]">
+              <thead className="sticky top-0 bg-[#FCFCFD]">
+                <tr className="text-left text-[11px] font-semibold uppercase text-ink-3">
+                  <th className="px-3 py-2">Name</th><th className="px-3 py-2">Type</th><th className="px-3 py-2">Modified By</th><th className="px-3 py-2">Modified On</th>
+                </tr>
+              </thead>
+              <tbody>
+                {templates.map((t) => (
+                  <tr key={t.id} className="border-t border-line hover:bg-black/[0.02]">
+                    <td className="px-3 py-2 font-medium">{t.name}</td>
+                    <td className="px-3 py-2"><Pill variant="blue">{t.configurationType}</Pill></td>
+                    <td className="px-3 py-2 text-ink-3">{t.modifiedBy.split('@')[0]}</td>
+                    <td className="px-3 py-2 text-ink-3">{formatDate(t.modifiedOn)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="border-t border-line px-3 py-2 text-[11px] text-ink-3">Total: {templates.length}</p>
           </div>
         </div>
       </Modal>
