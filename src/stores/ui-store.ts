@@ -14,6 +14,7 @@ interface UiState {
   selectedOrderIds: Set<string>
   selectedInvoiceIds: Set<string>
   toggleSidebar: () => void
+  setSidebarCollapsed: (collapsed: boolean) => void
   setCopilotOpen: (open: boolean) => void
   setAskAiFocused: (focused: boolean) => void
   addToast: (message: string, type?: Toast['type']) => void
@@ -34,6 +35,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   selectedOrderIds: new Set(),
   selectedInvoiceIds: new Set(),
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+  setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
   setCopilotOpen: (open) => set({ copilotOpen: open }),
   setAskAiFocused: (focused) => set({ askAiFocused: focused }),
   addToast: (message, type = 'success') => {

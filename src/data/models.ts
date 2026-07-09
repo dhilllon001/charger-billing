@@ -108,7 +108,30 @@ export interface Order {
   distance?: string
   pickup?: ShipperStop
   delivery?: ShipperStop
+  adjuster?: OrderAdjuster
+  auditLog?: AuditEntry[]
   selectedDocument?: string
+}
+
+export interface OrderAdjuster {
+  name: string
+  phone: string
+  email: string
+  region: string
+  lastContact?: string
+  openClaims: number
+  status: 'Active' | 'On Hold' | 'Closed'
+  notes?: string
+  adjustments?: { date: string; type: string; amount: number; note: string }[]
+}
+
+export interface AuditEntry {
+  id: string
+  action: string
+  user: string
+  timestamp: string
+  detail?: string
+  status?: 'pass' | 'warn' | 'fail'
 }
 
 export interface ConsolidatedBatch {

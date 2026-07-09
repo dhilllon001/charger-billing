@@ -31,12 +31,14 @@ export function Sidebar() {
   return (
     <>
       {!collapsed && (
-        <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={toggle} />
+        <div className="fixed inset-0 z-40 bg-black/40" onClick={toggle} />
       )}
       <aside
         className={cn(
-          'sr-sidebar fixed inset-y-0 left-0 z-50 flex h-full w-[240px] shrink-0 flex-col transition-transform duration-300 ease-[var(--ease-apple)] lg:relative lg:z-auto',
-          collapsed ? '-translate-x-full lg:translate-x-0' : 'translate-x-0'
+          'sr-sidebar fixed inset-y-0 left-0 z-50 flex h-full shrink-0 flex-col transition-all duration-300 ease-[var(--ease-apple)]',
+          collapsed
+            ? '-translate-x-full w-[240px] lg:-translate-x-full'
+            : 'translate-x-0 w-[240px]'
         )}
       >
         <div className="border-b border-[var(--sr-nav-divider)] px-4 py-5">
@@ -79,7 +81,8 @@ export function Sidebar() {
           </div>
           <button
             onClick={toggle}
-            className="mt-2 flex w-full items-center justify-center rounded-md py-1.5 text-[var(--sr-nav-meta)] hover:bg-[var(--sr-nav-hover)] lg:hidden"
+            className="mt-2 flex w-full items-center justify-center rounded-md py-1.5 text-[var(--sr-nav-meta)] hover:bg-[var(--sr-nav-hover)]"
+            aria-label="Collapse sidebar"
           >
             <ChevronLeft size={16} strokeWidth={1.7} />
           </button>

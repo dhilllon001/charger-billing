@@ -39,11 +39,7 @@ export function Topbar() {
 
   return (
     <header className="sr-topbar sticky top-0 z-40 flex flex-wrap items-center gap-3 px-4 sm:px-6">
-      <button
-        onClick={toggleSidebar}
-        className="sr-topbar__icon-btn lg:hidden"
-        aria-label="Toggle menu"
-      >
+      <button onClick={toggleSidebar} className="sr-topbar__icon-btn" aria-label="Toggle menu">
         <Menu size={18} strokeWidth={1.7} />
       </button>
 
