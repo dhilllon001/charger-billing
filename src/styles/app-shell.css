@@ -235,6 +235,11 @@
   padding: 0;
 }
 
+/* Order detail — hide global topbar (menu / Charger AI strip) */
+.sr-app:has(.od-page--apple) .sr-topbar {
+  display: none;
+}
+
 /* Order detail — viewport-locked, panels scroll inside */
 .sr-main:has(.od-page--apple) {
   overflow: hidden;

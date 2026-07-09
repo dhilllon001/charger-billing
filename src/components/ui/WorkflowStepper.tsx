@@ -1,4 +1,5 @@
 import type { OrderWorkflow, WorkflowStageStatus } from '@/data/models'
+import { CheckCircle2, Clock, List, MoreVertical, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
 export const WORKFLOW_STAGES = [
@@ -29,9 +30,14 @@ function stageDetail(key: (typeof WORKFLOW_STAGES)[number]['key'], step: OrderWo
     return `${s.checksPassed}/${s.checksTotal} checks`
   }
   const s = step as { label: string; status: WorkflowStageStatus }
-  if (s.status === 'waiting' || s.status === 'pending') return 'Waiting'
+  if (s.status === 'waiting') return s.label === 'Waiting' ? 'Waiting' : s.label
+  if (s.status === 'pending') return 'Pending'
   if (s.status === 'passed') return 'Complete'
   return s.label
+}
+
+function isChecksStage(key: (typeof WORKFLOW_STAGES)[number]['key']) {
+  return key === 'rateValidation' || key === 'operationValidation' || key === 'podPending'
 }
 
 export function getCurrentWorkflowStage(workflow: OrderWorkflow): CurrentWorkflowStage {
@@ -119,6 +125,85 @@ export function WorkflowStageCompact({ workflow }: { workflow: OrderWorkflow }) 
         </span>
         <span className="sr-stage-compact__detail">{current.detail}</span>
       </div>
+    </div>
+  )
+}
+
+/** Card-based workflow rail for order detail (matches legacy stepper design) */
+export function WorkflowStageSteps({ workflow }: { workflow: OrderWorkflow }) {
+  const current = getCurrentWorkflowStage(workflow)
+
+  return (
+    <div className="od-stage-cards" role="list" aria-label="Workflow stages">
+      {WORKFLOW_STAGES.map((s, i) => {
+        const step = workflow[s.key]
+        const isCurrent = i === current.index
+        const detail = stageDetail(s.key, step)
+        const showChecksLink =
+          isChecksStage(s.key) &&
+          (step.status === 'passed' || step.status === 'warning' || step.status === 'failed')
+        const showWaitingBadge = step.status === 'waiting' || step.status === 'pending'
+
+        return (
+          <div key={s.key} className="od-stage-cards__slot" role="listitem">
+            {i > 0 && (
+              <span
+                className={cn(
+                  'od-stage-cards__connector',
+                  workflow[WORKFLOW_STAGES[i - 1].key].status === 'passed' && 'is-past'
+                )}
+                aria-hidden
+              />
+            )}
+            <div
+              className={cn(
+                'od-stage-card',
+                isCurrent && 'is-current',
+                step.status === 'passed' && 'is-passed',
+                `od-stage-card--${step.status}`
+              )}
+            >
+              <div className="od-stage-card__head">
+                <span
+                  className={cn(
+                    'od-stage-card__icon',
+                    step.status === 'passed' && 'is-passed',
+                    (step.status === 'waiting' || step.status === 'pending') && 'is-pending',
+                    step.status === 'warning' && 'is-warning',
+                    step.status === 'failed' && 'is-failed'
+                  )}
+                  aria-hidden
+                >
+                  {step.status === 'passed' ? (
+                    <CheckCircle2 size={15} strokeWidth={2} />
+                  ) : step.status === 'warning' ? (
+                    <AlertCircle size={15} strokeWidth={2} />
+                  ) : (
+                    <Clock size={15} strokeWidth={2} />
+                  )}
+                </span>
+                <span className="od-stage-card__title">{s.label}</span>
+                {showWaitingBadge && (
+                  <span className="od-stage-card__badge">Waiting</span>
+                )}
+                <button type="button" className="od-stage-card__menu" aria-label={`${s.label} options`}>
+                  <MoreVertical size={14} strokeWidth={2} />
+                </button>
+              </div>
+              <div className="od-stage-card__body">
+                {showChecksLink ? (
+                  <button type="button" className="od-stage-card__checks">
+                    <List size={12} strokeWidth={2} />
+                    {detail}
+                  </button>
+                ) : (
+                  <span className="od-stage-card__detail">{detail}</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
