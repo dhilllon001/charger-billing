@@ -1,112 +1,440 @@
-/* Batch Invoicing — unified workspace panel */
+/* Batch Invoicing — Apple-style workspace */
 
 .batch-workspace {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.batch-header-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 16px;
-  margin-top: 6px;
-  font-size: 12px;
-  color: var(--sr-text-meta);
-}
-
-.batch-header-meta__item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.batch-header-meta__item strong {
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  color: var(--sr-text-primary);
-}
-
-.batch-header-meta__sep {
-  width: 1px;
-  height: 14px;
-  background: var(--sr-border-2);
+  gap: 0;
+  margin: -4px -8px 0;
+  padding: 0 4px 24px;
+  min-height: calc(100vh - 64px);
+  background: #F5F5F7;
 }
 
 .batch-panel {
-  background: var(--sr-surface-1);
-  border: 1px solid var(--sr-border-1);
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(15, 26, 42, 0.04);
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 24px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+}
+
+/* Top row: pipeline + actions */
+.batch-panel__top {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px 10px;
+  background: linear-gradient(180deg, #FAFAFA 0%, #FFFFFF 100%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+@media (min-width: 900px) {
+  .batch-panel__top {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.batch-panel__top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .batch-panel__pipeline {
-  padding: 10px 12px;
-  background: linear-gradient(180deg, var(--sr-surface-2) 0%, var(--sr-surface-1) 100%);
-  border-bottom: 1px solid var(--sr-border-1);
   overflow-x: auto;
   overflow-y: visible;
   position: relative;
   z-index: 20;
+  flex: 1;
+  min-width: 0;
 }
 
-.batch-panel__controls {
+/* Toolbar */
+.batch-panel__toolbar {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--sr-border-1);
-  background: var(--sr-surface-1);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #FAFAFA;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-@media (min-width: 900px) {
-  .batch-panel__controls {
-    flex-direction: row;
-    align-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  .batch-panel__search {
-    flex: 0 1 280px;
-    min-width: 220px;
-  }
-
-  .batch-panel__filters {
-    flex: 1;
-    min-width: 0;
-  }
+.batch-panel__search {
+  flex: 1 1 200px;
+  min-width: 180px;
+  max-width: 320px;
 }
 
-.batch-panel__controls .sr-filter-strip {
-  border: none;
-  background: transparent;
-  padding: 0;
+.batch-toolbar-chip {
+  display: inline-flex;
+  align-items: center;
   gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #3C3C43;
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.batch-toolbar-chip:hover {
+  background: #F5F5F7;
+  border-color: rgba(0, 0, 0, 0.14);
+}
+
+.batch-toolbar-chip.is-active {
+  background: rgba(0, 113, 227, 0.08);
+  border-color: rgba(0, 113, 227, 0.35);
+  color: #0071E3;
+}
+
+.batch-toolbar-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: #0071E3;
+  border-radius: 9px;
+}
+
+.batch-toolbar-select,
+.batch-toolbar-date {
+  height: 34px;
+  padding: 0 10px;
+  font-size: 12px;
+  color: #3C3C43;
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  outline: none;
+}
+
+.batch-toolbar-select:focus,
+.batch-toolbar-date:focus {
+  border-color: #0071E3;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+}
+
+.batch-toolbar-date {
+  width: 130px;
+}
+
+.batch-toolbar-date-sep {
+  font-size: 12px;
+  color: #8E8E93;
 }
 
 .batch-panel__applied {
   padding: 0 14px 10px;
-  border-bottom: 1px solid var(--sr-border-1);
+  background: #FAFAFA;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-.batch-panel__applied:empty {
-  display: none;
-}
-
+/* Table area */
 .batch-panel__table {
   overflow: hidden;
-  border-radius: 0 0 12px 12px;
 }
 
-.batch-panel__table .sr-table-wrap {
+.batch-panel__table--grouped .sr-table-wrap {
   border: none;
   border-radius: 0;
-  max-height: min(68vh, 760px);
-  overflow: auto;
+  max-height: min(70vh, 780px);
+  background: #FFFFFF;
 }
 
-/* Refined table cells */
+.batch-panel__table--grouped .sr-table {
+  table-layout: auto;
+  min-width: 1100px;
+}
+
+.batch-panel__table--grouped .sr-table thead th {
+  background: #F2F2F7;
+  border-bottom: 1px solid #D1D1D6;
+  padding: 9px 12px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #636366;
+}
+
+.batch-panel__table--grouped .sr-table tbody tr:nth-child(even) {
+  background: #F9F9FB;
+}
+
+.batch-panel__table--grouped .sr-table tbody tr:nth-child(odd) {
+  background: #FFFFFF;
+}
+
+.batch-panel__table--grouped .sr-table td {
+  padding: 10px 12px;
+  height: auto;
+  min-height: 48px;
+  border-bottom: 1px solid #ECECEF;
+  vertical-align: middle;
+}
+
+.batch-panel__table--grouped .sr-table-row--hoverable:hover,
+.batch-panel__table--grouped .sr-table-row--clickable:hover {
+  background: #EEF4FC !important;
+  box-shadow: inset 3px 0 0 #0071E3;
+}
+
+.batch-panel__table--grouped .sr-table tr.is-selected {
+  background: rgba(0, 113, 227, 0.06) !important;
+}
+
+/* Column widths */
+.batch-panel__table--grouped .col-indicators { width: 88px; }
+.batch-panel__table--grouped .col-customer { min-width: 160px; }
+.batch-panel__table--grouped .col-order { min-width: 120px; }
+.batch-panel__table--grouped .col-dates { min-width: 130px; }
+.batch-panel__table--grouped .col-location { min-width: 140px; }
+.batch-panel__table--grouped .col-amount { min-width: 100px; }
+.batch-panel__table--grouped .col-stage { min-width: 120px; }
+
+/* Grouped two-line cells */
+.batch-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.batch-cell__primary {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1D1D1F;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.batch-cell__secondary {
+  font-size: 11px;
+  font-weight: 400;
+  color: #8E8E93;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.batch-cell .mono {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+.batch-amount {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #1D1D1F;
+}
+
+td.num .batch-cell {
+  align-items: flex-end;
+  text-align: right;
+}
+
+td.num .batch-cell__primary,
+td.num .batch-cell__secondary {
+  text-align: right;
+}
+
+/* Row indicators */
+.batch-indicators {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.batch-indicators__btn,
+.batch-indicators__tag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #8E8E93;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.batch-indicators__btn:hover,
+.batch-indicators__tag:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #1D1D1F;
+}
+
+.batch-flag {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.batch-pod-badge {
+  display: inline-flex;
+  padding: 2px 6px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #0071E3;
+  background: rgba(0, 113, 227, 0.1);
+  border-radius: 4px;
+}
+
+/* Current stage pill — not pending/accepted */
+.batch-stage-pill {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1D1D1F;
+  background: #F2F2F7;
+  border-radius: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.batch-stage-pill--failed {
+  color: #D93025;
+  background: rgba(217, 48, 37, 0.1);
+}
+
+.batch-stage-pill--warning {
+  color: #9A5B00;
+  background: rgba(199, 116, 0, 0.12);
+}
+
+.batch-stage-pill--pending,
+.batch-stage-pill--active {
+  color: #0071E3;
+  background: rgba(0, 113, 227, 0.1);
+}
+
+.batch-stage-pill--passed {
+  color: #1F7A43;
+  background: rgba(31, 122, 67, 0.1);
+}
+
+.batch-stage-pill--waiting {
+  color: #636366;
+  background: #F2F2F7;
+}
+
+/* Footer pagination */
+.batch-panel__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #FAFAFA;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  font-size: 12px;
+  color: #636366;
+}
+
+.batch-panel__footer-total strong {
+  font-weight: 700;
+  color: #1D1D1F;
+  font-variant-numeric: tabular-nums;
+}
+
+.batch-panel__footer-pages {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.batch-panel__footer-size {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #636366;
+}
+
+.batch-panel__footer-size select {
+  height: 30px;
+  padding: 0 8px;
+  font-size: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.batch-panel__footer-range {
+  font-variant-numeric: tabular-nums;
+  min-width: 48px;
+  text-align: center;
+}
+
+.batch-page-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  background: #fff;
+  color: #3C3C43;
+  cursor: pointer;
+}
+
+.batch-page-btn:hover:not(:disabled) {
+  background: #F5F5F7;
+}
+
+.batch-page-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Mobile cards */
+.batch-mobile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #8E8E93;
+}
+
+.batch-panel__table--grouped .sr-table-cards {
+  background: #F5F5F7;
+  padding: 10px;
+}
+
+.batch-panel__table--grouped .sr-table-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+}
+
+/* Legacy cell helpers (still used elsewhere) */
 .sr-cell-order__id {
   font-size: 13px;
   font-weight: 600;

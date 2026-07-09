@@ -114,36 +114,88 @@ export function EmailDeliveryPage() {
       </div>
 
       <div className="overflow-hidden rounded-[16px] bg-card shadow-[var(--shadow-rest)]">
-        <div className="hidden border-b border-line bg-[#FCFCFD] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.05em] text-ink-3 md:grid md:grid-cols-[1.5fr_1.2fr_auto_auto_auto_auto] md:gap-4">
-          <span>Billing Customer</span><span>Recipients</span><span>Send via</span><span>Frequency</span><span>Attachment</span><span>Active</span>
+        <div className="hidden overflow-x-auto md:block">
+          <table className="w-full min-w-[1100px] text-[12px]">
+            <thead className="border-b border-line bg-[#FCFCFD]">
+              <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.05em] text-ink-3">
+                <th className="px-4 py-3">Action</th>
+                <th className="px-4 py-3">Billing Customer</th>
+                <th className="px-4 py-3">Billing Address</th>
+                <th className="px-4 py-3">To</th>
+                <th className="px-4 py-3">Contact</th>
+                <th className="px-4 py-3">To Location Wise</th>
+                <th className="px-4 py-3">Send Via</th>
+                <th className="px-4 py-3">Frequency</th>
+                <th className="px-4 py-3">Send on Day</th>
+                <th className="px-4 py-3">Attachment</th>
+                <th className="px-4 py-3">Read</th>
+                <th className="px-4 py-3">Delivery</th>
+                <th className="px-4 py-3">Send Logo</th>
+                <th className="px-4 py-3">Modified By</th>
+                <th className="px-4 py-3">Modified On</th>
+                <th className="px-4 py-3">Active</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((rule) => (
+                <tr key={rule.id} onClick={() => openEdit(rule)} className="cursor-pointer border-b border-line transition-colors hover:bg-[#F7F9FC]">
+                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                    <button type="button" className="text-[11px] font-medium text-accent" onClick={() => openEdit(rule)}>Edit</button>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5 font-semibold text-ink">
+                      {rule.billingCustomer}
+                      {rule.note && <StickyNote size={14} strokeWidth={1.7} className="text-orange" />}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-ink-3">{rule.billingAddress}</td>
+                  <td className="px-4 py-3">
+                    <span>{rule.to[0]}</span>
+                    {rule.to.length > 1 && <span className="ml-1 rounded-full bg-black/[0.06] px-1.5 text-[10px]">+{rule.to.length - 1}</span>}
+                  </td>
+                  <td className="px-4 py-3">{rule.contact ?? '—'}</td>
+                  <td className="px-4 py-3">{rule.toLocationWise ?? '—'}</td>
+                  <td className="px-4 py-3"><Pill variant={sendViaVariant(rule.sendVia)}>{rule.sendVia}</Pill></td>
+                  <td className="px-4 py-3">{rule.frequency}</td>
+                  <td className="px-4 py-3">{rule.sendOnDay ?? '—'}</td>
+                  <td className="px-4 py-3">{rule.attachment === 'Single attachment in one email' ? 'Single PDF' : 'Per invoice'}</td>
+                  <td className="px-4 py-3">{rule.readReceipt ? 'Yes' : '—'}</td>
+                  <td className="px-4 py-3">{rule.deliverReceipt ? 'Yes' : '—'}</td>
+                  <td className="px-4 py-3">{rule.sendLogo ? 'Yes' : '—'}</td>
+                  <td className="px-4 py-3 text-ink-3">{rule.modifiedBy.split('@')[0] ?? rule.modifiedBy}</td>
+                  <td className="px-4 py-3 text-ink-3">{formatDate(rule.modifiedOn)}</td>
+                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                    <Switch checked={rule.active} onChange={(v) => toggleActive(rule.id, v)} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+        {/* Mobile cards */}
+        <div className="md:hidden">
         {filtered.map((rule) => (
           <div
             key={rule.id}
             onClick={() => openEdit(rule)}
-            className="cursor-pointer border-b border-line px-4 py-3.5 transition-colors hover:bg-[#F7F9FC] md:grid md:grid-cols-[1.5fr_1.2fr_auto_auto_auto_auto] md:items-center md:gap-4"
+            className="cursor-pointer border-b border-line px-4 py-3.5 transition-colors hover:bg-[#F7F9FC]"
           >
-            <div>
-              <div className="flex items-center gap-1.5 font-semibold text-ink">
-                {rule.billingCustomer}
-                {rule.note && <StickyNote size={14} strokeWidth={1.7} className="text-orange" />}
-              </div>
-              <div className="text-[11px] text-ink-3">{rule.billingAddress}</div>
+            <div className="flex items-center gap-1.5 font-semibold text-ink">
+              {rule.billingCustomer}
+              {rule.note && <StickyNote size={14} strokeWidth={1.7} className="text-orange" />}
             </div>
-            <div className="flex items-center gap-1">
-              <span className="text-[12px]">{rule.to[0]}</span>
-              {rule.to.length > 1 && (
-                <span className="rounded-full bg-black/[0.06] px-1.5 text-[10px] text-ink-3">+{rule.to.length - 1}</span>
-              )}
+            <div className="mt-1 text-[11px] text-ink-3">{rule.billingAddress}</div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Pill variant={sendViaVariant(rule.sendVia)}>{rule.sendVia}</Pill>
+              <span className="text-[12px]">{rule.frequency}</span>
             </div>
-            <Pill variant={sendViaVariant(rule.sendVia)}>{rule.sendVia}</Pill>
-            <span className="text-[12px]">{rule.frequency}{rule.sendOnDay ? ` · ${rule.sendOnDay}` : ''}</span>
-            <span className="text-[12px] text-ink-2">{rule.attachment === 'Single attachment in one email' ? 'Single PDF' : 'Per invoice'}</span>
-            <div onClick={(e) => e.stopPropagation()}>
+            <div className="mt-2 flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
+              <span className="text-[11px] text-ink-3">{rule.to.join(', ')}</span>
               <Switch checked={rule.active} onChange={(v) => toggleActive(rule.id, v)} />
             </div>
           </div>
         ))}
+        </div>
       </div>
 
       <Modal
@@ -160,6 +212,14 @@ export function EmailDeliveryPage() {
               onChange={(e) => setForm({ ...form, billingCustomer: e.target.value })}
               className="field-input"
               placeholder="Search customer…"
+            />
+          </Field>
+          <Field label="Billing Address">
+            <input
+              value={form.billingAddress}
+              onChange={(e) => setForm({ ...form, billingAddress: e.target.value })}
+              className="field-input"
+              placeholder="Billing address…"
             />
           </Field>
           <div className="grid grid-cols-2 gap-4">
@@ -196,6 +256,9 @@ export function EmailDeliveryPage() {
           </Field>
           <Field label="Contact">
             <input value={form.contact ?? ''} onChange={(e) => setForm({ ...form, contact: e.target.value })} className="field-input" />
+          </Field>
+          <Field label="To Location Wise">
+            <input value={form.toLocationWise ?? ''} onChange={(e) => setForm({ ...form, toLocationWise: e.target.value })} className="field-input" placeholder="Location-based routing…" />
           </Field>
           <Field label="Note">
             <textarea value={form.note ?? ''} onChange={(e) => setForm({ ...form, note: e.target.value })} className="field-input min-h-[80px]" />

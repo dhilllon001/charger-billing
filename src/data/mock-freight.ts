@@ -21,6 +21,11 @@ export const freightRates: FreightRate[] = Array.from({ length: 25 }, (_, i) => 
   distance: '1 MILE',
   frtMethod: 'Flat Rate',
   multiProbill: i % 4 === 0,
+  gallons: i % 3 === 0 ? 120 : undefined,
+  dryVanExp: 30 + (i % 14),
+  reeferExp: 45 + (i % 10),
+  triAxleExp: 20 + (i % 8),
+  heaterExp: 15 + (i % 6),
   updatedBy: 'CHARGER\\veena',
   active: i % 5 !== 0,
 }))

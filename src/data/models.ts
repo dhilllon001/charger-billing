@@ -134,6 +134,59 @@ export interface AuditEntry {
   status?: 'pass' | 'warn' | 'fail'
 }
 
+export interface RelatedPORecord {
+  id: string
+  orderNo: string
+  poCategory: string
+  billingStatus: string
+  poStatus: string
+  customerPoNo: string
+  poNumber: string
+  orderStatus: string
+  invoiceNo?: string
+  invoiceTotal?: number
+}
+
+export interface InvoiceHistoryRecord {
+  id: string
+  invoiceNo: string
+  invoiceType: string
+  invoiceStatus: string
+  reason?: string
+  lastUpdatedBy: string
+  lastUpdatedOn: string
+}
+
+export interface AccountingSyncRecord {
+  id: string
+  invoiceNo: string
+  totalAmount: number
+  invoiceDate: string
+  paymentStatus: string
+  amountDue: number
+  poNumber: string
+  fromOnAc?: string
+  taxAmount: number
+  dueAmount: number
+  currency: string
+  invoiceDue: string
+  createdBy: string
+}
+
+export interface OrderNote {
+  id: string
+  text: string
+  createdBy: string
+  createdOn: string
+}
+
+export interface InternalRating {
+  carrier: string
+  laneScore: number
+  onTimePct: number
+  lastRated: string
+}
+
 export interface ConsolidatedBatch {
   id: string
   customer: string

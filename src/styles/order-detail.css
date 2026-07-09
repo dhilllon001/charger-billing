@@ -1084,6 +1084,91 @@
   color: #9A5B00;
 }
 
+/* Validation header cards */
+.od-validation-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+
+@media (min-width: 640px) {
+  .od-validation-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .od-validation-cards {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+.od-validation-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--sr-border-1);
+  background: var(--sr-surface-1);
+}
+
+.od-validation-card__label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sr-text-meta);
+}
+
+.od-validation-card__count {
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.od-validation-card__count .is-pass { color: var(--sr-positive); }
+.od-validation-card__count .is-fail { color: var(--sr-negative); }
+
+.od-validation-card__status {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sr-text-secondary);
+}
+
+.od-validation-card--passed { border-color: rgba(31, 122, 67, 0.25); }
+.od-validation-card--failed { border-color: rgba(163, 43, 34, 0.25); }
+.od-validation-card--warning { border-color: rgba(199, 116, 0, 0.3); }
+
+.od-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.od-charges-clean--full {
+  min-width: 640px;
+}
+
+.od-charges-clean--full .meta {
+  font-size: 10px;
+  color: var(--sr-text-meta);
+  white-space: nowrap;
+}
+
+.od-summary--full {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  font-size: 11px;
+  color: var(--sr-text-meta);
+}
+
+.od-summary--full strong {
+  color: var(--sr-text-primary);
+  margin-left: 4px;
+}
+
 .od-adjuster__card {
   display: flex;
   align-items: center;

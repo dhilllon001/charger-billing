@@ -7,6 +7,9 @@ export type BatchFilters = {
   division: string
   customer: string
   poBillingStatus: string
+  equipment: string
+  dateFrom: string
+  dateTo: string
   quickPod: boolean
   stage: string
   colFilters: Record<string, string | { min?: string; max?: string }>
@@ -18,6 +21,9 @@ export const DEFAULT_BATCH_FILTERS: BatchFilters = {
   division: 'ALL',
   customer: 'ALL',
   poBillingStatus: 'ALL',
+  equipment: 'ALL',
+  dateFrom: '',
+  dateTo: '',
   quickPod: false,
   stage: 'all',
   colFilters: {},
@@ -27,7 +33,10 @@ export const BATCH_FILTER_DEFS = [
   { key: 'division' as const, label: 'Division' },
   { key: 'customer' as const, label: 'Customer' },
   { key: 'poBillingStatus' as const, label: 'PO Billing' },
+  { key: 'equipment' as const, label: 'Equipment' },
 ]
+
+export const EQUIPMENT_OPTIONS = ['ALL', 'Dry Van', 'FTL', 'Reefer', 'LTL']
 
 export const BATCH_COL_FILTER_DEFS = [
   { key: 'customer', label: 'Customer', type: 'text' as const },
@@ -75,7 +84,19 @@ export function matchesPipelineStage(order: Order, stage: string): boolean {
 
 export function filterBatchOrders(orders: Order[], filters: BatchFilters): Order[] {
   return orders.filter((o) => {
-    const { stage, search, searchScope, division, customer, poBillingStatus, quickPod, colFilters } = filters
+    const {
+      stage,
+      search,
+      searchScope,
+      division,
+      customer,
+      poBillingStatus,
+      equipment,
+      dateFrom,
+      dateTo,
+      quickPod,
+      colFilters,
+    } = filters
 
     if (!matchesPipelineStage(o, stage)) return false
 
@@ -95,6 +116,9 @@ export function filterBatchOrders(orders: Order[], filters: BatchFilters): Order
     if (division !== 'ALL' && o.division !== division) return false
     if (customer !== 'ALL' && o.customer !== customer) return false
     if (poBillingStatus !== 'ALL' && o.poBillingStatus !== poBillingStatus) return false
+    if (equipment !== 'ALL' && o.equipment !== equipment) return false
+    if (dateFrom && o.deliveryDate < dateFrom) return false
+    if (dateTo && o.deliveryDate > dateTo) return false
     if (quickPod && !o.hasPod) return false
 
     if (!matchesColFilter(o.customer, colFilters.customer)) return false

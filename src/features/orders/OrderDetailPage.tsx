@@ -10,12 +10,18 @@ import { Card } from '@/components/ui/Card'
 import { WorkflowStageCompact } from '@/components/ui/WorkflowStepper'
 import { getOrderById } from '@/data/mock-orders'
 import { getOrderAdjuster, getOrderAuditLog } from '@/data/mock-order-detail'
+import {
+  getRelatedPOs,
+  getInvoiceHistory,
+  getAccountingSync,
+  getInternalRatings,
+} from '@/data/mock-order-extended'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { useUiStore } from '@/stores/ui-store'
 import { cn } from '@/lib/cn'
-import type { Order, OrderDocument, OrderAdjuster, AuditEntry } from '@/data/models'
+import type { Order, OrderDocument, OrderAdjuster, AuditEntry, OrderWorkflow } from '@/data/models'
 
-const leftTabs = ['Charges', 'Internal Ratings', 'Related PO', 'Notes', 'Instructions'] as const
+const leftTabs = ['Charges', 'Internal Ratings', 'Related PO', 'Invoice History', 'Accounting Sync', 'Notes', 'Instructions'] as const
 const rightTabs = ['Account', 'Billing', 'Audit', 'Documents'] as const
 
 export function OrderDetailPage() {
@@ -30,12 +36,18 @@ export function OrderDetailPage() {
   const [rightTab, setRightTab] = useState<(typeof rightTabs)[number]>('Billing')
   const [selectedDoc, setSelectedDoc] = useState<string | null>(null)
 
+  const relatedPOs = getRelatedPOs(orderId ?? '')
+  const invoiceHistory = getInvoiceHistory(orderId ?? '')
+  const accountingSync = getAccountingSync(orderId ?? '')
+  const internalRatings = getInternalRatings(orderId ?? '')
+
   const charges = order?.charges ?? []
   const totals = useMemo(() => {
     const base = charges.filter((c) => c.item !== 'AUTO-FSC' && c.item !== 'FSC').reduce((s, c) => s + c.total, 0)
     const fsc = charges.filter((c) => c.item === 'AUTO-FSC' || c.item === 'FSC').reduce((s, c) => s + c.total, 0)
     const sub = base + fsc
-    return { base, fsc, sub, tax: 0, total: sub }
+    const tax = charges.reduce((s, c) => s + (c.taxCode === 'G' ? c.total * 0.05 : 0), 0)
+    return { base, fsc, sub, tax, total: sub + tax }
   }, [charges])
 
   if (!order) {
@@ -116,6 +128,8 @@ export function OrderDetailPage() {
             <WorkflowStageCompact workflow={order.workflow} />
           </div>
         )}
+
+        {order.workflow && <ValidationCards workflow={order.workflow} />}
       </header>
 
       <div className="od-dual">
@@ -142,14 +156,18 @@ export function OrderDetailPage() {
           <div className="od-panel__body">
             {leftTab === 'Charges' && (
               <>
-                <div className="od-panel__body--flush -mx-3.5 sm:-mx-4">
-                  <table className="od-charges-clean">
+                <div className="od-panel__body--flush -mx-3.5 sm:-mx-4 od-table-scroll">
+                  <table className="od-charges-clean od-charges-clean--full">
                     <thead>
                       <tr>
                         <th>Item</th>
                         <th>Description</th>
+                        <th className="num">Price</th>
                         <th className="num">Qty</th>
-                        <th className="num">Total</th>
+                        <th>Tax Code</th>
+                        <th className="num">Total Charges</th>
+                        <th>Created On</th>
+                        <th>Created By</th>
                         <th />
                       </tr>
                     </thead>
@@ -158,8 +176,12 @@ export function OrderDetailPage() {
                         <tr key={i} className="od-charges-clean__row">
                           <td className="item">{c.item}</td>
                           <td className="desc">{c.description}</td>
+                          <td className="num">{formatCurrency(c.price, order.currency)}</td>
                           <td className="num">{c.qty}</td>
+                          <td>{c.taxCode ?? '—'}</td>
                           <td className="num">{formatCurrency(c.total, order.currency)}</td>
+                          <td className="meta">{formatDate(c.createdOn)}</td>
+                          <td className="meta">{c.createdBy.split('@')[0]}</td>
                           <td className="act">
                             <button type="button" className="od-charge-del" title="Remove charge">
                               <Trash2 size={13} strokeWidth={1.7} />
@@ -170,17 +192,19 @@ export function OrderDetailPage() {
                     </tbody>
                   </table>
                 </div>
-                <div className="od-summary od-summary--compact od-summary--inset">
-                  <span>Base <strong>{formatCurrency(totals.base, order.currency)}</strong></span>
-                  <span>FSC <strong>{formatCurrency(totals.fsc, order.currency)}</strong></span>
-                  <span className="od-summary__total">{formatCurrency(totals.total || order.invoiceAmount, order.currency)}</span>
+                <div className="od-summary od-summary--full od-summary--inset">
+                  <span>Base Charges <strong>{formatCurrency(totals.base, order.currency)}</strong></span>
+                  <span>FSC Amount <strong>{formatCurrency(totals.fsc, order.currency)}</strong></span>
+                  <span>Sub Total <strong>{formatCurrency(totals.sub, order.currency)}</strong></span>
+                  <span>Tax Amount <strong>{formatCurrency(totals.tax, order.currency)}</strong></span>
+                  <span className="od-summary__total">Total <strong>{formatCurrency(totals.total || order.invoiceAmount, order.currency)}</strong></span>
                 </div>
               </>
             )}
-            {leftTab === 'Internal Ratings' && (
-              <EmptyPanel title="Internal Ratings" hint="Carrier and lane rating details appear here when configured." />
-            )}
-            {leftTab === 'Related PO' && <RelatedPOTable order={order} />}
+            {leftTab === 'Internal Ratings' && <InternalRatingsTable ratings={internalRatings} />}
+            {leftTab === 'Related PO' && <RelatedPOTable rows={relatedPOs} />}
+            {leftTab === 'Invoice History' && <InvoiceHistoryTable rows={invoiceHistory} />}
+            {leftTab === 'Accounting Sync' && <AccountingSyncTable rows={accountingSync} />}
             {leftTab === 'Notes' && <EmptyPanel title="No notes" hint="Add notes for this order." actionLabel="Add note" />}
             {leftTab === 'Instructions' && (
               <EmptyPanel
@@ -431,28 +455,149 @@ function DocumentsPanel({
   )
 }
 
-function RelatedPOTable({ order }: { order: Order }) {
+function ValidationCards({ workflow }: { workflow: OrderWorkflow }) {
+  const cards = [
+    { key: 'rate', label: 'Rate Validation', data: workflow.rateValidation, showCount: true },
+    { key: 'ops', label: 'Operation Validation', data: workflow.operationValidation, showCount: true },
+    { key: 'pod', label: 'POD Pending', data: workflow.podPending, showCount: true },
+    { key: 'auto', label: 'Auto Invoicing', data: workflow.autoInvoicing, showCount: false },
+    { key: 'delivery', label: 'Invoice Delivery', data: workflow.invoiceDelivery, showCount: false },
+    { key: 'sync', label: 'Accounting Sync', data: workflow.accountingSync, showCount: false },
+  ] as const
+
   return (
-    <table className="od-charges-clean">
-      <thead>
-        <tr>
-          <th>Order</th>
-          <th>Category</th>
-          <th>Billing</th>
-          <th>PO</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr className="od-charges-clean__row">
-          <td className="item">{order.orderNo}</td>
-          <td>{order.poCategory}</td>
-          <td>{order.poBillingStatus}</td>
-          <td>{order.poNo}</td>
-        </tr>
-      </tbody>
-    </table>
+    <div className="od-validation-cards">
+      {cards.map((c) => (
+        <div key={c.key} className={cn('od-validation-card od-hover-card', `od-validation-card--${c.data.status}`)}>
+          <span className="od-validation-card__label">{c.label}</span>
+          {c.showCount ? (
+            <span className="od-validation-card__count">
+              <span className={c.data.status === 'passed' ? 'is-pass' : c.data.status === 'failed' ? 'is-fail' : ''}>
+                {c.data.checksPassed}
+              </span>
+              /{c.data.checksTotal}
+            </span>
+          ) : (
+            <span className="od-validation-card__status">{'label' in c.data ? c.data.label : '—'}</span>
+          )}
+        </div>
+      ))}
+    </div>
   )
 }
+
+function InternalRatingsTable({ ratings }: { ratings: ReturnType<typeof getInternalRatings> }) {
+  return (
+    <div className="od-table-scroll">
+      <table className="od-charges-clean od-charges-clean--full">
+        <thead>
+          <tr><th>Carrier</th><th className="num">Lane Score</th><th className="num">On-Time %</th><th>Last Rated</th></tr>
+        </thead>
+        <tbody>
+          {ratings.map((r, i) => (
+            <tr key={i} className="od-charges-clean__row">
+              <td className="item">{r.carrier}</td>
+              <td className="num">{r.laneScore.toFixed(1)}</td>
+              <td className="num">{r.onTimePct}%</td>
+              <td>{r.lastRated}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function RelatedPOTable({ rows }: { rows: ReturnType<typeof getRelatedPOs> }) {
+  return (
+    <div className="od-table-scroll">
+      <table className="od-charges-clean od-charges-clean--full">
+        <thead>
+          <tr>
+            <th>Order No.</th><th>PO Category</th><th>Billing Status</th><th>PO Status</th>
+            <th>Customer PO No.</th><th>PO Number</th><th>Order Status</th><th>Invoice No.</th><th className="num">Invoice Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.id} className="od-charges-clean__row">
+              <td className="item">{r.orderNo}</td>
+              <td>{r.poCategory}</td>
+              <td>{r.billingStatus}</td>
+              <td>{r.poStatus}</td>
+              <td>{r.customerPoNo}</td>
+              <td>{r.poNumber}</td>
+              <td>{r.orderStatus}</td>
+              <td>{r.invoiceNo ?? '—'}</td>
+              <td className="num">{r.invoiceTotal != null ? formatCurrency(r.invoiceTotal) : '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function InvoiceHistoryTable({ rows }: { rows: ReturnType<typeof getInvoiceHistory> }) {
+  if (!rows.length) return <EmptyPanel title="No invoice history" hint="Invoices generated for this order will appear here." />
+  return (
+    <div className="od-table-scroll">
+      <table className="od-charges-clean od-charges-clean--full">
+        <thead>
+          <tr><th>Invoice No.</th><th>Invoice Type</th><th>Invoice Status</th><th>Reason</th><th>Last Updated By</th><th>Last Updated On</th></tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.id} className="od-charges-clean__row">
+              <td className="item">{r.invoiceNo}</td>
+              <td>{r.invoiceType}</td>
+              <td>{r.invoiceStatus}</td>
+              <td>{r.reason ?? '—'}</td>
+              <td>{r.lastUpdatedBy}</td>
+              <td>{r.lastUpdatedOn}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function AccountingSyncTable({ rows }: { rows: ReturnType<typeof getAccountingSync> }) {
+  if (!rows.length) return <EmptyPanel title="Not synced yet" hint="Accounting sync records appear after invoice export." />
+  return (
+    <div className="od-table-scroll">
+      <table className="od-charges-clean od-charges-clean--full">
+        <thead>
+          <tr>
+            <th>Invoice No.</th><th className="num">T.Amount</th><th>Invoice Date</th><th>P.Status</th>
+            <th className="num">Amount Due</th><th>PO Number</th><th>From On Ac.</th><th className="num">Tax Amount</th>
+            <th className="num">D.Amount</th><th>Currency</th><th>Invoice Due</th><th>Created By</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.id} className="od-charges-clean__row">
+              <td className="item">{r.invoiceNo}</td>
+              <td className="num">{formatCurrency(r.totalAmount, r.currency as 'USD')}</td>
+              <td>{r.invoiceDate}</td>
+              <td>{r.paymentStatus}</td>
+              <td className="num">{formatCurrency(r.amountDue, r.currency as 'USD')}</td>
+              <td>{r.poNumber}</td>
+              <td>{r.fromOnAc ?? '—'}</td>
+              <td className="num">{formatCurrency(r.taxAmount, r.currency as 'USD')}</td>
+              <td className="num">{formatCurrency(r.dueAmount, r.currency as 'USD')}</td>
+              <td>{r.currency}</td>
+              <td>{r.invoiceDue}</td>
+              <td>{r.createdBy}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 
 function EmptyPanel({ title, hint, actionLabel }: { title: string; hint: string; actionLabel?: string }) {
   return (

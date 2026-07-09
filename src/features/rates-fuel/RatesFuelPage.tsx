@@ -173,29 +173,58 @@ export function RatesFuelPage() {
               <h2 className="text-[14px] font-bold">{customer.name}</h2>
               <div className="flex flex-wrap gap-2">
                 <Button variant="ghost" size="sm">Create</Button>
+                <Button variant="ghost" size="sm">Pending Approval</Button>
+                <Button variant="ghost" size="sm">Extend</Button>
                 <Button variant="ghost" size="sm">Export</Button>
                 <Button variant="ghost" size="sm">Import</Button>
+                <Button variant="ghost" size="sm">Templates</Button>
+                <Button variant="ghost" size="sm">Filters</Button>
+                <Button variant="ghost" size="sm">Extra Charges</Button>
                 <Button size="sm" onClick={() => setLaneModal(true)}>Manage Lane</Button>
               </div>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] text-[12px]">
+              <table className="w-full min-w-[1200px] text-[12px]">
                 <thead className="bg-[#FCFCFD]">
                   <tr className="text-left text-[11px] font-semibold uppercase text-ink-3">
-                    <th className="px-3 py-2">☑</th><th className="px-3 py-2">Origin</th><th className="px-3 py-2">Destination</th><th className="px-3 py-2">Type</th><th className="px-3 py-2">Currency</th><th className="px-3 py-2">Distance</th><th className="px-3 py-2">FRT Method</th><th className="px-3 py-2">Multi Probill</th><th className="px-3 py-2">Updated By</th><th className="px-3 py-2">Active</th>
+                    <th className="px-3 py-2">Action</th>
+                    <th className="px-3 py-2">Origin</th>
+                    <th className="px-3 py-2">Destination</th>
+                    <th className="px-3 py-2">Type</th>
+                    <th className="px-3 py-2">Currency</th>
+                    <th className="px-3 py-2">Distance</th>
+                    <th className="px-3 py-2">FRT Method</th>
+                    <th className="px-3 py-2">Multi Probill</th>
+                    <th className="px-3 py-2">Gallons</th>
+                    <th className="px-3 py-2">DryVan Exp.</th>
+                    <th className="px-3 py-2">Reefer Exp.</th>
+                    <th className="px-3 py-2">TriAxle Exp.</th>
+                    <th className="px-3 py-2">Heater Exp.</th>
+                    <th className="px-3 py-2">Updated By</th>
+                    <th className="px-3 py-2">Active</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rates.map((r) => (
                     <tr key={r.id} className="border-t border-line hover:bg-[#F7F9FC]">
-                      <td className="px-3 py-2.5"><input type="checkbox" className="rounded" /></td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex gap-1">
+                          <button type="button" className="rounded p-1 hover:bg-black/[0.05]" onClick={() => setLaneModal(true)}><Pencil size={14} strokeWidth={1.7} /></button>
+                          <button type="button" className="rounded p-1 hover:bg-black/[0.05]"><Trash2 size={14} strokeWidth={1.7} /></button>
+                        </div>
+                      </td>
                       <td className="px-3 py-2.5">{r.origin}</td>
                       <td className="px-3 py-2.5">{r.destination}</td>
                       <td className="px-3 py-2.5">{r.type}</td>
                       <td className="px-3 py-2.5">{r.currency}</td>
                       <td className="px-3 py-2.5">{r.distance}</td>
                       <td className="px-3 py-2.5">{r.frtMethod}</td>
-                      <td className="px-3 py-2.5">{r.multiProbill ? '✗' : '—'}</td>
+                      <td className="px-3 py-2.5">{r.multiProbill ? 'Yes' : '—'}</td>
+                      <td className="px-3 py-2.5 tabular-nums">{r.gallons ?? '—'}</td>
+                      <td className="px-3 py-2.5 tabular-nums">{r.dryVanExp ?? '—'}</td>
+                      <td className="px-3 py-2.5 tabular-nums">{r.reeferExp ?? '—'}</td>
+                      <td className="px-3 py-2.5 tabular-nums">{r.triAxleExp ?? '—'}</td>
+                      <td className="px-3 py-2.5 tabular-nums">{r.heaterExp ?? '—'}</td>
                       <td className="px-3 py-2.5 text-ink-3">{r.updatedBy}</td>
                       <td className="px-3 py-2.5"><Switch checked={r.active} onChange={() => {}} /></td>
                     </tr>
@@ -228,19 +257,41 @@ export function RatesFuelPage() {
             <Card key={cust} className="overflow-hidden">
               <div className="border-b border-line bg-black/[0.02] px-4 py-2 font-semibold text-[13px]">− {cust}</div>
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[700px] text-[12px]">
-                  <thead><tr className="bg-[#FCFCFD] text-left text-[11px] font-semibold uppercase text-ink-3"><th className="px-3 py-2">Origin</th><th className="px-3 py-2">Destination</th><th className="px-3 py-2">O.CC</th><th className="px-3 py-2">D.CC</th><th className="px-3 py-2">Lane Type</th><th className="px-3 py-2">Equipment</th><th className="px-3 py-2">Effective</th><th className="px-3 py-2">Expiry</th><th className="px-3 py-2"></th></tr></thead>
+                <table className="w-full min-w-[1000px] text-[12px]">
+                  <thead><tr className="bg-[#FCFCFD] text-left text-[11px] font-semibold uppercase text-ink-3">
+                    <th className="px-3 py-2">Customer Name</th>
+                    <th className="px-3 py-2">Upcoming Expired Days</th>
+                    <th className="px-3 py-2">Origin</th>
+                    <th className="px-3 py-2">Destination</th>
+                    <th className="px-3 py-2">Origin Country Code</th>
+                    <th className="px-3 py-2">Destination Country Code</th>
+                    <th className="px-3 py-2">Lane Type Code</th>
+                    <th className="px-3 py-2">City From</th>
+                    <th className="px-3 py-2">City To</th>
+                    <th className="px-3 py-2">Equipment</th>
+                    <th className="px-3 py-2">Effective Date</th>
+                    <th className="px-3 py-2">Expiry Date</th>
+                    <th className="px-3 py-2">Updated By</th>
+                    <th className="px-3 py-2">Updated On</th>
+                    <th className="px-3 py-2"></th>
+                  </tr></thead>
                   <tbody>
-                    {cards.map((rc) => (
+                    {cards.filter((rc) => daysUntil(rc.expiryDate) <= expiryDays).map((rc) => (
                       <tr key={rc.id} className="border-t border-line">
+                        <td className="px-3 py-2 font-medium">{cust}</td>
+                        <td className="px-3 py-2"><Pill variant={daysUntil(rc.expiryDate) <= 7 ? 'red' : 'orange'}>{daysUntil(rc.expiryDate)} days</Pill></td>
                         <td className="px-3 py-2">{rc.origin}</td>
                         <td className="px-3 py-2">{rc.destination}</td>
                         <td className="px-3 py-2">{rc.originCountryCode}</td>
                         <td className="px-3 py-2">{rc.destinationCountryCode}</td>
                         <td className="px-3 py-2">{rc.laneTypeCode}</td>
+                        <td className="px-3 py-2">{rc.cityFrom}</td>
+                        <td className="px-3 py-2">{rc.cityTo}</td>
                         <td className="px-3 py-2">{rc.equipment}</td>
                         <td className="px-3 py-2">{formatDate(rc.effectiveDate)}</td>
                         <td className="px-3 py-2"><Pill variant={daysUntil(rc.expiryDate) <= 7 ? 'red' : 'orange'}>{formatDate(rc.expiryDate)}</Pill></td>
+                        <td className="px-3 py-2 text-ink-3">{rc.updatedBy ?? '—'}</td>
+                        <td className="px-3 py-2 text-ink-3">{rc.updatedOn ? formatDate(rc.updatedOn) : '—'}</td>
                         <td className="px-3 py-2"><Button variant="ghost" size="sm">Renew rate</Button></td>
                       </tr>
                     ))}

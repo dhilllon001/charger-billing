@@ -1,40 +1,32 @@
 import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { createColumnHelper, type RowSelectionState } from '@tanstack/react-table'
 import { Search } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Segment } from '@/components/ui/Segment'
 import { Card } from '@/components/ui/Card'
-import { Pill } from '@/components/ui/Pill'
-import { DataTable, CopyableMono } from '@/components/ui/Table'
+import { SearchInput } from '@/components/ui/SearchInput'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { SrDataTable } from '@/components/report/SrDataTable'
 import { consolidatedBatches } from '@/data/mock-consolidated'
 import { orders } from '@/data/mock-orders'
 import { consolidatedValidationGroups } from '@/data/validation-filters'
-import { formatCurrency, formatDate, avatarColor, initials } from '@/lib/format'
+import { formatCurrency, avatarColor, initials } from '@/lib/format'
 import { useUiStore } from '@/stores/ui-store'
-import type { Order } from '@/data/models'
+import { buildLegacyOrderColumns } from '@/lib/legacy-order-columns'
+import { matchesPipelineStage } from '@/features/batch-invoicing/batch-filters'
 import { cn } from '@/lib/cn'
 
-const columnHelper = createColumnHelper<Order>()
-
-const segments = [
-  { id: 'all', label: 'All', count: 11 },
-  { id: 'rate_validated', label: 'Rate validated', count: 4 },
-  { id: 'ops_validated', label: 'Ops validated', count: 0 },
-  { id: 'pod_verified', label: 'POD Validation', count: 0 },
-  { id: 'rfi', label: 'RFI', count: 1 },
-  { id: 'invoiced', label: 'Invoiced', count: 0 },
-  { id: 'email_delivery', label: 'Email delivery', count: 0 },
-  { id: 'as', label: 'AS', count: 0 },
-]
+const PIPELINE_IDS = ['all', 'rate_validated', 'ops_validated', 'pod_verified', 'rfi', 'invoiced', 'email_delivery', 'as'] as const
 
 export function ConsolidatedPage() {
   const [selectedBatchId, setSelectedBatchId] = useState(consolidatedBatches[10]?.id ?? consolidatedBatches[0].id)
   const [customerSearch, setCustomerSearch] = useState('')
   const [stage, setStage] = useState('all')
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
+  const [orderSearch, setOrderSearch] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const addToast = useUiStore((s) => s.addToast)
 
   const filteredBatches = consolidatedBatches.filter((b) =>
@@ -42,54 +34,71 @@ export function ConsolidatedPage() {
   )
 
   const batch = consolidatedBatches.find((b) => b.id === selectedBatchId)!
-  const batchOrders = orders.filter((o) => batch.orderIds.includes(o.id))
+  const batchOrders = useMemo(
+    () => orders.filter((o) => batch.orderIds.includes(o.id)),
+    [batch.orderIds]
+  )
+
+  const stageFilteredOrders = useMemo(() => {
+    return batchOrders.filter((o) => {
+      if (!matchesPipelineStage(o, stage)) return false
+      if (orderSearch) {
+        const q = orderSearch.toLowerCase()
+        if (!o.orderNo.toLowerCase().includes(q) && !o.poNo.toLowerCase().includes(q) && !o.customer.toLowerCase().includes(q))
+          return false
+      }
+      if (dateFrom && o.deliveryDate < dateFrom) return false
+      if (dateTo && o.deliveryDate > dateTo) return false
+      return true
+    })
+  }, [batchOrders, stage, orderSearch, dateFrom, dateTo])
+
+  const segments = useMemo(
+    () =>
+      PIPELINE_IDS.map((id) => ({
+        id,
+        label:
+          id === 'all'
+            ? 'All'
+            : id === 'pod_verified'
+              ? 'POD Validation'
+              : id === 'email_delivery'
+                ? 'Email Invoice Delivery'
+                : id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+        count: batchOrders.filter((o) => matchesPipelineStage(o, id)).length,
+      })),
+    [batchOrders]
+  )
 
   const groupedOrders = useMemo(() => {
     const groups = consolidatedValidationGroups.map((g) => ({
       ...g,
-      orders: batchOrders.filter((o) => o.validationGroup === g.id),
+      orders: stageFilteredOrders.filter((o) => o.validationGroup === g.id),
     }))
-    const ungrouped = batchOrders.filter((o) => !o.validationGroup)
+    const ungrouped = stageFilteredOrders.filter((o) => !o.validationGroup)
     if (ungrouped.length) groups.push({ id: 'other', label: 'Other', count: ungrouped.length, orders: ungrouped })
     return groups.filter((g) => g.orders.length > 0)
-  }, [batchOrders])
+  }, [stageFilteredOrders])
 
-  const selectedIds = Object.keys(rowSelection).filter((k) => rowSelection[k])
-  const selectedTotal = batchOrders.filter((o) => selectedIds.includes(o.id)).reduce((s, o) => s + o.invoiceAmount, 0)
+  const selectedTotal = stageFilteredOrders.filter((o) => selectedIds.has(o.id)).reduce((s, o) => s + o.invoiceAmount, 0)
+  const columns = useMemo(() => buildLegacyOrderColumns({ compact: true }), [])
 
-  const columns = useMemo(() => [
-    columnHelper.display({
-      id: 'select',
-      header: ({ table }) => (
-        <input type="checkbox" checked={table.getIsAllPageRowsSelected()} onChange={table.getToggleAllPageRowsSelectedHandler()} className="rounded" />
-      ),
-      cell: ({ row }) => (
-        <input type="checkbox" checked={row.getIsSelected()} onChange={row.getToggleSelectedHandler()} className="rounded" />
-      ),
-    }),
-    columnHelper.accessor('orderNo', { header: 'Order No.', cell: ({ getValue }) => <CopyableMono value={getValue()} /> }),
-    columnHelper.accessor('customer', { header: 'Customer' }),
-    columnHelper.accessor('billToCustomer', { header: 'Bill To Customer', meta: { defaultHidden: true } }),
-    columnHelper.accessor('poNo', { header: 'PO No.' }),
-    columnHelper.accessor('division', { header: 'Division', meta: { defaultHidden: true } }),
-    columnHelper.accessor('poCategory', { header: 'PO Category', meta: { defaultHidden: true } }),
-    columnHelper.accessor('poBillingStatus', { header: 'PO Billing Status', cell: ({ getValue }) => <Pill variant="blue">{getValue()}</Pill> }),
-    columnHelper.accessor('pickUpDate', { header: 'Pick Up Date', cell: ({ getValue }) => formatDate(getValue()), meta: { defaultHidden: true } }),
-    columnHelper.accessor('deliveryDate', { header: 'Delivery Date', cell: ({ getValue }) => formatDate(getValue()) }),
-    columnHelper.accessor('pickupLocation', { header: 'Pickup Location', meta: { defaultHidden: true } }),
-    columnHelper.accessor('invoiceAmount', {
-      header: 'Amount',
-      cell: ({ getValue }) => <span className="tabular-nums font-semibold">{formatCurrency(getValue())}</span>,
-    }),
-    columnHelper.accessor('aiCheck', {
-      header: 'Checks',
-      cell: ({ row }) => (
-        <Pill variant={row.original.aiCheck.state === 'auto_validated' ? 'green' : 'orange'}>
-          {row.original.aiCheck.state === 'auto_validated' ? 'Passed' : 'Review'}
-        </Pill>
-      ),
-    }),
-  ], [])
+  const toggleRow = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleAll = (ids: string[]) => {
+    setSelectedIds((prev) => {
+      const allOn = ids.every((id) => prev.has(id))
+      if (allOn) return new Set()
+      return new Set(ids)
+    })
+  }
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 sm:space-y-5">
@@ -115,6 +124,7 @@ export function ConsolidatedPage() {
                 className="h-9 w-full rounded-[10px] border border-line bg-white pl-9 pr-3 text-[13px] outline-none focus:ring-2 focus:ring-accent-soft"
               />
             </div>
+            <p className="mt-2 text-[11px] text-ink-3">{filteredBatches.length} customers · {consolidatedBatches.length} batches</p>
           </div>
           <div className="max-h-[320px] overflow-y-auto xl:max-h-full">
             {filteredBatches.map((b) => {
@@ -123,7 +133,7 @@ export function ConsolidatedPage() {
               return (
                 <button
                   key={b.id}
-                  onClick={() => { setSelectedBatchId(b.id); setRowSelection({}) }}
+                  onClick={() => { setSelectedBatchId(b.id); setSelectedIds(new Set()) }}
                   className={cn(
                     'flex w-full items-center gap-3 border-b border-line px-4 py-3 text-left transition-colors',
                     active ? 'bg-accent-soft' : 'hover:bg-black/[0.02]'
@@ -151,32 +161,44 @@ export function ConsolidatedPage() {
             <div className="text-left sm:text-right">
               <div className="text-[11px] uppercase tracking-[0.05em] text-ink-3">Invoice Total</div>
               <div className="text-[24px] font-bold tabular-nums sm:text-[28px]">
-                {formatCurrency(selectedIds.length ? selectedTotal : batchOrders.reduce((s, o) => s + o.invoiceAmount, 0), batch.currency)}
+                {formatCurrency(selectedIds.size ? selectedTotal : stageFilteredOrders.reduce((s, o) => s + o.invoiceAmount, 0), batch.currency)}
               </div>
             </div>
           </div>
 
+          <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3">
+            <SearchInput value={orderSearch} onChange={setOrderSearch} placeholder="Order # or keyword…" className="w-full sm:w-56" />
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="rounded-lg border border-line px-2 py-1.5 text-[12px]" title="Date from" />
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="rounded-lg border border-line px-2 py-1.5 text-[12px]" title="Date to" />
+            <span className="ml-auto text-[11px] text-ink-3">{stageFilteredOrders.length} orders</span>
+          </div>
+
           <div className="flex-1 overflow-auto p-4 space-y-4">
-            {groupedOrders.map((group) => (
-              <div key={group.id}>
-                <button className="mb-2 flex items-center gap-2 text-[13px] font-semibold text-ink">
-                  <span className="rounded-lg bg-black/[0.05] px-2 py-0.5 text-[11px] tabular-nums">{group.label} ({group.orders.length})</span>
-                </button>
-                <DataTable
-                  data={group.orders}
-                  columns={columns}
-                  gridId={`consolidated-${group.id}`}
-                  getRowId={(row) => row.id}
-                  rowSelection={rowSelection}
-                  onRowSelectionChange={setRowSelection}
-                />
-              </div>
-            ))}
+            {groupedOrders.length === 0 ? (
+              <div className="py-16 text-center text-[13px] text-ink-3">No orders match the current filters.</div>
+            ) : (
+              groupedOrders.map((group) => (
+                <div key={group.id}>
+                  <div className="mb-2 flex items-center gap-2 text-[13px] font-semibold text-ink">
+                    <span className="rounded-lg bg-black/[0.05] px-2 py-0.5 text-[11px] tabular-nums">{group.label} ({group.orders.length})</span>
+                  </div>
+                  <SrDataTable
+                    rows={group.orders}
+                    columns={columns}
+                    responsive
+                    selectedIds={selectedIds}
+                    onToggleRow={toggleRow}
+                    onToggleAll={toggleAll}
+                    emptyTitle="No orders in this group"
+                  />
+                </div>
+              ))
+            )}
           </div>
 
           <div className="flex flex-wrap justify-end gap-2 border-t border-line p-4">
             <Link to="/batch-invoicing"><Button variant="ghost" size="sm">Batch view</Button></Link>
-            <Button size="sm" onClick={() => addToast(`Consolidated invoice CI-${Date.now().toString().slice(-4)} generated · ${selectedIds.length || batchOrders.length} orders`)}>
+            <Button size="sm" onClick={() => addToast(`Consolidated invoice CI-${Date.now().toString().slice(-4)} generated · ${selectedIds.size || stageFilteredOrders.length} orders`)}>
               Generate invoice
             </Button>
           </div>

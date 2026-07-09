@@ -1,18 +1,14 @@
 import { useMemo, useState, useCallback } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, Sparkles } from 'lucide-react'
+import { Sparkles, SlidersHorizontal, LayoutGrid, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Segment } from '@/components/ui/Segment'
 import { SearchInput } from '@/components/ui/SearchInput'
-import { WorkflowStageBadge } from '@/components/ui/WorkflowStepper'
-import { PageHeader } from '@/components/layout/PageHeader'
 import { SelectActionBar } from '@/components/layout/SelectActionBar'
 import { FiltersDrawer } from '@/components/layout/FiltersDrawer'
-import { ReportFilterStrip } from '@/components/report/ReportFilterStrip'
 import { AppliedFiltersRow } from '@/components/report/AppliedFiltersRow'
 import { SrDataTable } from '@/components/report/SrDataTable'
-import { RowQuickActions } from '@/components/report/RowQuickActions'
 import {
   selectApplied,
   searchApplied,
@@ -21,21 +17,22 @@ import {
 } from '@/lib/report/filters'
 import { orders, getStageCounts } from '@/data/mock-orders'
 import { rateValidationFilters, opsValidationFilters } from '@/data/validation-filters'
-import { formatCurrency, formatDate } from '@/lib/format'
+import { formatCurrency } from '@/lib/format'
 import { useUiStore } from '@/stores/ui-store'
-import type { Order, PipelineStage } from '@/data/models'
+import type { PipelineStage } from '@/data/models'
 import {
   DEFAULT_BATCH_FILTERS,
   BATCH_FILTER_DEFS,
   BATCH_COL_FILTER_DEFS,
   filterBatchOrders,
-  DIVISIONS,
-  CUSTOMERS,
   PO_BILLING_OPTIONS,
   type BatchFilters,
 } from './batch-filters'
+import { buildBatchGroupedColumns } from '@/lib/batch-grouped-columns'
+import { getCurrentWorkflowStage } from '@/components/ui/WorkflowStepper'
 
 const stageCounts = getStageCounts()
+const PAGE_SIZES = [25, 50, 100]
 
 const segments = [
   { id: 'all', label: 'All', count: stageCounts.all },
@@ -54,7 +51,7 @@ const segments = [
   { id: 'pod_verified', label: 'POD Validation', count: stageCounts.pod_verified },
   { id: 'rfi', label: 'RFI', count: stageCounts.rfi },
   { id: 'invoiced', label: 'Invoiced', count: stageCounts.invoiced },
-  { id: 'email_delivery', label: 'Email delivery', count: stageCounts.email_delivery },
+  { id: 'email_delivery', label: 'Email Invoice Delivery', count: stageCounts.email_delivery },
   { id: 'as', label: 'AS', count: stageCounts.as },
 ]
 
@@ -64,15 +61,22 @@ export function BatchInvoicingPage() {
   const [filters, setFilters] = useState<BatchFilters>({ ...DEFAULT_BATCH_FILTERS, stage: initialStage })
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(25)
   const navigate = useNavigate()
   const addToast = useUiStore((s) => s.addToast)
 
   const patch = useCallback((p: Partial<BatchFilters>) => {
     setFilters((prev) => ({ ...prev, ...p }))
+    setPage(0)
   }, [])
 
   const filtered = useMemo(() => filterBatchOrders(orders, filters), [filters])
-  const invoiceTotal = useMemo(() => filtered.reduce((s, o) => s + o.invoiceAmount, 0), [filtered])
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const paged = useMemo(
+    () => filtered.slice(page * pageSize, page * pageSize + pageSize),
+    [filtered, page, pageSize]
+  )
 
   const appliedFilters = useMemo(
     () => [
@@ -90,14 +94,18 @@ export function BatchInvoicingPage() {
     () =>
       countActiveFilters(
         filters as unknown as Record<string, unknown>,
-        ['division', 'customer', 'poBillingStatus'],
+        ['division', 'customer', 'poBillingStatus', 'equipment'],
         filters.colFilters
-      ) + (filters.quickPod ? 1 : 0),
+      ) +
+      (filters.quickPod ? 1 : 0) +
+      (filters.dateFrom ? 1 : 0) +
+      (filters.dateTo ? 1 : 0),
     [filters]
   )
 
   const resetFilters = () => {
     setFilters({ ...DEFAULT_BATCH_FILTERS, stage: filters.stage })
+    setPage(0)
   }
 
   const selectedTotal = filtered.filter((o) => selectedIds.has(o.id)).reduce((s, o) => s + o.invoiceAmount, 0)
@@ -119,98 +127,45 @@ export function BatchInvoicingPage() {
     })
   }
 
-  const cycleSelect = (key: 'division' | 'customer' | 'poBillingStatus', options: string[]) => {
-    const idx = options.indexOf(filters[key])
-    const next = options[(idx + 1) % options.length]
-    patch({ [key]: next })
-  }
-
-  const filterStripItems = [
-    {
-      key: 'quickPod',
-      label: 'Quick POD',
-      active: filters.quickPod,
-      onClick: () => patch({ quickPod: !filters.quickPod }),
-      onClear: () => patch({ quickPod: false }),
-    },
-    {
-      key: 'poBilling',
-      label: filters.poBillingStatus === 'ALL' ? 'Billing: Any' : filters.poBillingStatus,
-      active: filters.poBillingStatus !== 'ALL',
-      onClick: () => cycleSelect('poBillingStatus', PO_BILLING_OPTIONS),
-      onClear: () => patch({ poBillingStatus: 'ALL' }),
-    },
-    {
-      key: 'customer',
-      label: filters.customer === 'ALL' ? 'Customer: Any' : filters.customer,
-      active: filters.customer !== 'ALL',
-      onClick: () => cycleSelect('customer', CUSTOMERS),
-      onClear: () => patch({ customer: 'ALL' }),
-    },
-    {
-      key: 'division',
-      label: filters.division === 'ALL' ? 'Division: Any' : filters.division,
-      active: filters.division !== 'ALL',
-      onClick: () => cycleSelect('division', DIVISIONS),
-      onClear: () => patch({ division: 'ALL' }),
-    },
-    { key: 'allFilters', label: 'More filters', onClick: () => setFiltersOpen(true) },
-  ]
+  const groupedColumns = useMemo(() => buildBatchGroupedColumns(), [])
 
   return (
-    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="batch-workspace">
-      <div>
-        <PageHeader
-          title="Batch Invoicing"
-          subtitle="Review orders across rate, ops, and POD validation — generate invoices when ready."
-          actions={
-            <>
-              <Button variant="ai" size="sm" onClick={() => addToast('AI validated 735 orders — 58 flagged for review')}>
-                <Sparkles size={14} strokeWidth={1.7} />
-                <span className="hidden sm:inline">Auto-validate all (AI)</span>
-                <span className="sm:hidden">AI Validate</span>
-              </Button>
-              <Link to="/consolidated">
-                <Button variant="ghost" size="sm">Consolidated view</Button>
-              </Link>
-            </>
-          }
-        />
-        <div className="batch-header-meta">
-          <span className="batch-header-meta__item">
-            Pipeline <strong>{stageCounts.all.toLocaleString()}</strong>
-          </span>
-          <span className="batch-header-meta__sep" />
-          <span className="batch-header-meta__item">
-            Showing <strong>{filtered.length.toLocaleString()}</strong>
-          </span>
-          <span className="batch-header-meta__sep" />
-          <span className="batch-header-meta__item">
-            Selected <strong>{selectedIds.size.toLocaleString()}</strong>
-          </span>
-          <span className="batch-header-meta__sep" />
-          <span className="batch-header-meta__item">
-            Total <strong>{formatCurrency(invoiceTotal)}</strong>
-          </span>
-        </div>
-      </div>
-
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="batch-workspace">
       <div className="batch-panel">
-        <div className="batch-panel__pipeline batch-panel__pipeline--dropdown">
-          <Segment
-            items={segments}
-            value={filters.stage}
-            onChange={(stage) => patch({ stage })}
-            className="min-w-max !border-0 !bg-transparent !p-0"
-          />
+        <div className="batch-panel__top">
+          <div className="batch-panel__pipeline batch-panel__pipeline--dropdown">
+            <Segment
+              items={segments}
+              value={filters.stage}
+              onChange={(stage) => patch({ stage })}
+              className="min-w-max !border-0 !bg-transparent !p-0"
+            />
+          </div>
+          <div className="batch-panel__top-actions">
+            <Button variant="ai" size="sm" onClick={() => addToast('AI validated 735 orders — 58 flagged for review')}>
+              <Sparkles size={14} strokeWidth={1.7} />
+              <span className="hidden sm:inline">Auto-validate all</span>
+            </Button>
+            <Link to="/consolidated">
+              <Button variant="ghost" size="sm">Consolidated Invoicing</Button>
+            </Link>
+          </div>
         </div>
 
-        <div className="batch-panel__controls">
+        <div className="batch-panel__toolbar">
+          <Button
+            size="sm"
+            disabled={selectedIds.size === 0}
+            onClick={() => addToast(`Generating invoice for ${selectedIds.size} orders…`)}
+          >
+            Generate Invoice
+          </Button>
+
           <SearchInput
             value={filters.search}
             onChange={(search) => patch({ search })}
-            placeholder="Search order, PO or customer…"
-            className="batch-panel__search w-full"
+            placeholder="Filter by keyword…"
+            className="batch-panel__search"
             scope={{
               value: filters.searchScope,
               onChange: (searchScope) => patch({ searchScope: searchScope as BatchFilters['searchScope'] }),
@@ -221,9 +176,51 @@ export function BatchInvoicingPage() {
               ],
             }}
           />
-          <div className="batch-panel__filters">
-            <ReportFilterStrip items={filterStripItems} activeCount={activeCount} onReset={resetFilters} />
-          </div>
+
+          <button
+            type="button"
+            className={`batch-toolbar-chip${filters.quickPod ? ' is-active' : ''}`}
+            onClick={() => patch({ quickPod: !filters.quickPod })}
+          >
+            Quick POD Invoice
+          </button>
+
+          <select
+            value={filters.poBillingStatus}
+            onChange={(e) => patch({ poBillingStatus: e.target.value })}
+            className="batch-toolbar-select"
+          >
+            {PO_BILLING_OPTIONS.map((o) => (
+              <option key={o} value={o}>{o === 'ALL' ? 'Billing: Any' : o}</option>
+            ))}
+          </select>
+
+          <input
+            type="date"
+            value={filters.dateFrom}
+            onChange={(e) => patch({ dateFrom: e.target.value })}
+            className="batch-toolbar-date"
+            title="From"
+          />
+          <span className="batch-toolbar-date-sep">–</span>
+          <input
+            type="date"
+            value={filters.dateTo}
+            onChange={(e) => patch({ dateTo: e.target.value })}
+            className="batch-toolbar-date"
+            title="To"
+          />
+
+          <button type="button" className="batch-toolbar-chip" onClick={() => setFiltersOpen(true)}>
+            <SlidersHorizontal size={14} strokeWidth={1.7} />
+            Filters
+            {activeCount > 0 && <span className="batch-toolbar-badge">{activeCount}</span>}
+          </button>
+
+          <button type="button" className="batch-toolbar-chip hidden sm:inline-flex">
+            <LayoutGrid size={14} strokeWidth={1.7} />
+            Layouts
+          </button>
         </div>
 
         {appliedFilters.length > 0 && (
@@ -232,25 +229,10 @@ export function BatchInvoicingPage() {
           </div>
         )}
 
-        <div className="batch-panel__table">
+        <div className="batch-panel__table batch-panel__table--grouped">
           <SrDataTable
-            rows={filtered}
-            responsive
-            mobileCard={(row) => ({
-              title: row.orderNo,
-              subtitle: row.customer,
-              amount: formatCurrency(row.invoiceAmount),
-              meta: (
-                <>
-                  {row.workflow && <WorkflowStageBadge workflow={row.workflow} compact />}
-                  <span className="sr-table-card__route">
-                    <span>{row.pickupCity || row.pickupLocation}</span>
-                    <ArrowRight size={11} strokeWidth={2} />
-                    <span>{row.deliveryCity || row.deliveryLocation}</span>
-                  </span>
-                </>
-              ),
-            })}
+            rows={paged}
+            columns={groupedColumns}
             colFilters={filters.colFilters}
             onColFilterChange={(colFilters) => patch({ colFilters })}
             selectedIds={selectedIds}
@@ -258,81 +240,68 @@ export function BatchInvoicingPage() {
             onToggleAll={toggleAll}
             onRowClick={(row) => navigate(`/orders/${row.id}`)}
             hoverTitle={(row) => row.orderNo}
-            hoverSubtitle={(row) => `${row.customer} · ${row.poNo}`}
-            hoverDetails={(row) => [
-              { label: 'Amount', value: formatCurrency(row.invoiceAmount) },
-              { label: 'Pick Up', value: formatDate(row.pickUpDate) },
-              { label: 'Delivery', value: formatDate(row.deliveryDate) },
-              { label: 'Billing', value: row.poBillingStatus },
-              { label: 'Route', value: `${row.pickupLocation} → ${row.deliveryLocation}` },
-            ]}
+            hoverSubtitle={(row) => row.customer}
+            hoverDetails={(row) => {
+              const stage = row.workflow ? getCurrentWorkflowStage(row.workflow).label : row.stage
+              return [
+                { label: 'Bill To', value: row.billToCustomer },
+                { label: 'PO', value: row.poNo },
+                { label: 'Division', value: row.division },
+                { label: 'Amount', value: formatCurrency(row.invoiceAmount, row.currency) },
+                { label: 'Stage', value: stage },
+                { label: 'Pickup', value: `${row.pickupLocation} · ${row.pickupCity}` },
+                { label: 'Delivery', value: `${row.deliveryLocation} · ${row.deliveryCity}` },
+                { label: 'Caller', value: row.callerName || '—' },
+                { label: 'Draft', value: row.draftInvoice ? row.draftInvoiceNo ?? 'Yes' : 'No' },
+              ]
+            }}
             emptyTitle="No orders match these filters"
-            emptyHint="Try adjusting validation filters or clearing search"
+            emptyHint="Try a different pipeline stage or clear filters"
             emptyAction={
-              <Button variant="ghost" size="sm" onClick={resetFilters}>
-                Clear filters
-              </Button>
+              <Button variant="ghost" size="sm" onClick={resetFilters}>Clear filters</Button>
             }
-            columns={[
-              {
-                key: 'orderNo',
-                header: 'Order',
-                thClassName: 'col-order',
-                cell: (row) => <OrderCell row={row} />,
-              },
-              {
-                key: 'customer',
-                header: 'Customer',
-                thClassName: 'col-customer',
-                filter: { type: 'text' },
-                cell: (row) => <CustomerCell row={row} />,
-              },
-              {
-                key: 'route',
-                header: 'Route',
-                thClassName: 'col-route sr-col-hide-md',
-                hideBelow: 'md',
-                cell: (row) => (
-                  <div className="sr-cell-route">
-                    <span className="sr-cell-route__city">{row.pickupCity || row.pickupLocation}</span>
-                    <ArrowRight size={11} strokeWidth={2} className="shrink-0 opacity-40" />
-                    <span className="sr-cell-route__city">{row.deliveryCity || row.deliveryLocation}</span>
+            responsive
+            mobileCard={(row) => {
+              const stage = row.workflow ? getCurrentWorkflowStage(row.workflow).label : row.stage
+              return {
+                title: row.orderNo,
+                subtitle: row.customer,
+                amount: formatCurrency(row.invoiceAmount, row.currency),
+                meta: (
+                  <div className="batch-mobile-meta">
+                    <span className="batch-stage-pill">{stage}</span>
+                    <span>{row.pickupCity} → {row.deliveryCity}</span>
                   </div>
                 ),
-              },
-              {
-                key: 'invoiceAmount',
-                header: 'Amount',
-                align: 'right',
-                thClassName: 'col-amount',
-                filter: { type: 'range' },
-                cell: (row) => <span className="sr-cell-amount">{formatCurrency(row.invoiceAmount)}</span>,
-              },
-              {
-                key: 'workflow',
-                header: 'Stage',
-                thClassName: 'col-stage',
-                cell: (row) =>
-                  row.workflow ? (
-                    <WorkflowStageBadge workflow={row.workflow} />
-                  ) : (
-                    <span className="sr-status-text sr-status-text--muted">—</span>
-                  ),
-              },
-              {
-                key: 'actions',
-                header: '',
-                thClassName: 'col-action',
-                cell: (row) => (
-                  <RowQuickActions
-                    onOpen={() => navigate(`/orders/${row.id}`)}
-                    onAudit={() => addToast(`Auditing ${row.orderNo}…`)}
-                    onInvoice={() => addToast(`Draft invoice for ${row.orderNo}`)}
-                  />
-                ),
-              },
-            ]}
+              }
+            }}
           />
+        </div>
+
+        <div className="batch-panel__footer">
+          <span className="batch-panel__footer-total">
+            Total: <strong>{filtered.length.toLocaleString()}</strong>
+          </span>
+          <div className="batch-panel__footer-pages">
+            <label className="batch-panel__footer-size">
+              Items per page
+              <select
+                value={pageSize}
+                onChange={(e) => { setPageSize(Number(e.target.value)); setPage(0) }}
+              >
+                {PAGE_SIZES.map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </label>
+            <span className="batch-panel__footer-range">
+              {filtered.length === 0 ? '0' : `${page + 1}`} of {pageCount}
+            </span>
+            <button type="button" className="batch-page-btn" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
+              <ChevronLeft size={16} strokeWidth={2} />
+            </button>
+            <button type="button" className="batch-page-btn" disabled={page >= pageCount - 1} onClick={() => setPage((p) => p + 1)}>
+              <ChevronRight size={16} strokeWidth={2} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -346,30 +315,17 @@ export function BatchInvoicingPage() {
       <FiltersDrawer
         open={filtersOpen}
         onClose={() => setFiltersOpen(false)}
-        onApply={() => addToast('Filters applied')}
+        filters={{
+          poBillingStatus: filters.poBillingStatus,
+          customer: filters.customer,
+          division: filters.division,
+          equipment: filters.equipment,
+          dateFrom: filters.dateFrom,
+          dateTo: filters.dateTo,
+        }}
+        onPatch={patch}
         onClear={resetFilters}
       />
     </motion.div>
-  )
-}
-
-function OrderCell({ row }: { row: Order }) {
-  return (
-    <div>
-      <div className="sr-cell-order__id">{row.orderNo}</div>
-      <div className="sr-cell-order__meta">
-        <span>{row.poNo}</span>
-        <span>{row.equipment}</span>
-      </div>
-    </div>
-  )
-}
-
-function CustomerCell({ row }: { row: Order }) {
-  return (
-    <div>
-      <div className="sr-cell-customer__name">{row.customer}</div>
-      <div className="sr-cell-customer__sub">{row.division}</div>
-    </div>
   )
 }
