@@ -9,6 +9,7 @@ export type SrColumn<T> = {
   align?: 'left' | 'right'
   filter?: { type: 'text' | 'range' }
   className?: string
+  thClassName?: string
   /** Hide column below breakpoint */
   hideBelow?: 'md' | 'lg'
   cell: (row: T) => React.ReactNode
@@ -91,7 +92,7 @@ export function SrDataTable<T extends { id: string }>({
           <thead>
             <tr>
               {onToggleRow && (
-                <th style={{ width: 36 }}>
+                <th className="col-check" style={{ width: 40 }}>
                   <input
                     type="checkbox"
                     checked={!!allSelected}
@@ -103,7 +104,7 @@ export function SrDataTable<T extends { id: string }>({
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={cn(col.align === 'right' && 'num', col.hideBelow && hideClass[col.hideBelow])}
+                  className={cn(col.align === 'right' && 'num', col.hideBelow && hideClass[col.hideBelow], col.thClassName)}
                 >
                   {col.filter && onColFilterChange ? (
                     <ColumnFilterHeader
