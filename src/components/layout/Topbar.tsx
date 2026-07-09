@@ -48,23 +48,23 @@ export function Topbar() {
       </div>
 
       <div className="order-3 w-full sm:order-none sm:mx-auto sm:w-auto sm:flex-1 sm:flex sm:justify-center">
-        <button
-          type="button"
-          onClick={() => {
-            setCopilotOpen(true)
-            setAskAiFocused(true)
-          }}
-          className="sr-topbar__ai-bar"
-        >
-          <Sparkles size={15} strokeWidth={1.7} style={{ color: 'var(--sr-action)' }} />
-          <span className="truncate hidden sm:inline">
-            Ask AI — &ldquo;show unbilled Labatt orders over 30 days&rdquo;
-          </span>
-          <span className="truncate sm:hidden">Ask AI…</span>
-          <kbd className="ml-auto hidden rounded px-1.5 py-0.5 text-[10px] font-semibold sm:inline" style={{ background: 'var(--sr-surface-3)', color: 'var(--sr-text-meta)' }}>
-            ⌘K
-          </kbd>
-        </button>
+        <div className="charger-ai-bar-wrap">
+          <button
+            type="button"
+            onClick={() => {
+              setCopilotOpen(true)
+              setAskAiFocused(true)
+            }}
+            className="charger-ai-bar"
+          >
+            <Sparkles size={15} strokeWidth={1.7} className="charger-ai-bar__icon" />
+            <span className="charger-ai-bar__brand">Charger AI</span>
+            <span className="charger-ai-bar__hint hidden sm:inline">
+              Validate rates, find orders, draft invoices…
+            </span>
+            <kbd className="charger-ai-bar__kbd ml-auto hidden sm:inline">⌘K</kbd>
+          </button>
+        </div>
       </div>
 
       <div className="ml-auto flex shrink-0 items-center gap-0.5">

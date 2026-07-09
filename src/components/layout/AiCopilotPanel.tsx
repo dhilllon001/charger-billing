@@ -30,15 +30,15 @@ export function AiCopilotPanel() {
   }
 
   return (
-    <Drawer open={open} onClose={() => setOpen(false)} title="AI Copilot" width={400}>
+    <Drawer open={open} onClose={() => setOpen(false)} title="Charger AI" width={400}>
       <div className="flex h-full flex-col">
         <div className="flex-1 space-y-4 overflow-y-auto p-5">
           {messages.length === 0 && (
             <div className="text-center py-8">
-              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full ai-gradient">
-                <Sparkles size={18} strokeWidth={1.7} className="text-white" />
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-[#E5E5EA] bg-[#FAFBFC]">
+                <Sparkles size={18} strokeWidth={1.7} className="text-[#5E5CE6]" />
               </div>
-              <p className="text-[14px] font-semibold">How can I help?</p>
+              <p className="text-[14px] font-semibold">Charger AI</p>
               <p className="mt-1 text-[12px] text-ink-3">Ask about orders, invoices, rates, or billing status.</p>
             </div>
           )}

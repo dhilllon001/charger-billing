@@ -488,3 +488,123 @@
 .sr-stat__value--negative {
   color: var(--sr-negative);
 }
+
+/* Apple-style segmented control (batch pipeline) */
+.sr-segment--apple {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 2px;
+  padding: 3px;
+  background: #E8E8ED;
+  border: none;
+  border-radius: 10px;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.sr-segment--apple .sr-segment__btn {
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #636366;
+  border-radius: 8px;
+}
+
+.sr-segment--apple .sr-segment__btn:hover {
+  color: #1D1D1F;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.sr-segment--apple .sr-segment__btn.is-active {
+  background: #FFFFFF;
+  color: #1D1D1F;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.sr-segment--apple .sr-segment__count {
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.05);
+  color: #86868B;
+}
+
+.sr-segment--apple .sr-segment__btn.is-active .sr-segment__count {
+  background: #F2F2F7;
+  color: #48484A;
+}
+
+/* Charger AI top bar */
+.charger-ai-bar-wrap {
+  width: 100%;
+  max-width: 460px;
+  padding: 1px;
+  border-radius: 12px;
+  background: linear-gradient(
+    135deg,
+    rgba(10, 132, 255, 0.55) 0%,
+    rgba(94, 92, 230, 0.5) 45%,
+    rgba(191, 90, 242, 0.45) 100%
+  );
+}
+
+.charger-ai-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 36px;
+  padding: 0 14px;
+  font-size: 13px;
+  color: #636366;
+  background: #FAFBFC;
+  border: none;
+  border-radius: 11px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.charger-ai-bar:hover {
+  background: #FFFFFF;
+}
+
+.charger-ai-bar:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.25);
+}
+
+.charger-ai-bar__icon {
+  flex-shrink: 0;
+  color: #5E5CE6;
+}
+
+.charger-ai-bar__brand {
+  flex-shrink: 0;
+  font-weight: 600;
+  font-size: 13px;
+  background: linear-gradient(135deg, #0A84FF 0%, #5E5CE6 50%, #BF5AF2 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.charger-ai-bar__hint {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: #AEAEB2;
+}
+
+.charger-ai-bar__kbd {
+  flex-shrink: 0;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #86868B;
+  background: #F2F2F7;
+  border-radius: 5px;
+}

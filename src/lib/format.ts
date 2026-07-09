@@ -24,6 +24,18 @@ export function formatDateTime(dateStr: string): string {
   })
 }
 
+/** Shorter date for dense tables */
+export function formatDateTimeCompact(dateStr: string): string {
+  const d = new Date(dateStr)
+  if (Number.isNaN(d.getTime())) return dateStr
+  return d.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
 export function formatRelativeTime(dateStr: string): string {
   const now = Date.now()
   const then = new Date(dateStr).getTime()
