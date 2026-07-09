@@ -73,21 +73,22 @@ export function ColumnFilterHeader({ label, filterKey, type, value, onApply }: C
   }
 
   return (
-    <div ref={ref} className="relative inline-flex items-center">
-      <span>{label}</span>
+    <div ref={ref} className="sr-col-filter-header">
+      <span className="sr-col-filter-header__label">{label}</span>
       <button
         type="button"
-        className={cn('sr-col-filter-btn', isActive && 'is-active')}
+        className={cn('sr-col-filter-btn', isActive && 'is-active', open && 'is-open')}
         onClick={(e) => {
           e.stopPropagation()
           setOpen((v) => !v)
         }}
         aria-label={`Filter ${label}`}
+        aria-expanded={open}
       >
         <Filter size={12} strokeWidth={2} />
       </button>
       {open && (
-        <div className="sr-col-filter-popover" onClick={(e) => e.stopPropagation()}>
+        <div className="sr-col-filter-popover" role="dialog" aria-label={`Filter ${label}`} onClick={(e) => e.stopPropagation()}>
           {type === 'text' ? (
             <input
               autoFocus

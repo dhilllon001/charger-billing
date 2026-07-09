@@ -15,6 +15,14 @@
   --sr-text-micro: 11px;
   --sr-text-eyebrow: 10px;
 
+  --sr-weight-display: 700;
+  --sr-weight-h1: 600;
+  --sr-weight-h2: 600;
+  --sr-weight-h3: 600;
+  --sr-weight-h4: 600;
+  --sr-weight-body: 400;
+  --sr-weight-label: 700;
+
   /* Light theme — report surfaces */
   --sr-bg-app: #E0E4EA;
   --sr-surface-1: #FFFFFF;

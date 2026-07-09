@@ -2,6 +2,7 @@ import { cn } from '@/lib/cn'
 import { useRowHover } from '@/hooks/useRowHover'
 import { RowHoverPopover, type HoverDetail } from './RowHoverPopover'
 import { ColumnFilterHeader } from './ColumnFilterHeader'
+import { ColumnFilterCell } from './ColumnFilterCell'
 
 export type SrColumn<T> = {
   key: string
@@ -11,7 +12,7 @@ export type SrColumn<T> = {
   className?: string
   thClassName?: string
   /** Hide column below breakpoint */
-  hideBelow?: 'md' | 'lg'
+  hideBelow?: 'md' | 'lg' | 'xl'
   cell: (row: T) => React.ReactNode
 }
 
@@ -41,11 +42,17 @@ type SrDataTableProps<T extends { id: string }> = {
   maxHeight?: string
   responsive?: boolean
   mobileCard?: SrMobileCardRender<T>
+  tableClassName?: string
+  wrapClassName?: string
+  density?: 'default' | 'comfortable'
+  /** AG-style inline filter row below column headers */
+  headerFilters?: 'inline' | 'popover'
 }
 
 const hideClass: Record<NonNullable<SrColumn<unknown>['hideBelow']>, string> = {
   md: 'sr-col-hide-md',
   lg: 'sr-col-hide-lg',
+  xl: 'sr-col-hide-xl',
 }
 
 export function SrDataTable<T extends { id: string }>({
@@ -67,10 +74,15 @@ export function SrDataTable<T extends { id: string }>({
   maxHeight = 'min(65vh, 720px)',
   responsive = false,
   mobileCard,
+  tableClassName,
+  wrapClassName,
+  density = 'default',
+  headerFilters = 'popover',
 }: SrDataTableProps<T>) {
   const rowHover = useRowHover<T>()
   const allSelected = rows.length > 0 && selectedIds && rows.every((r) => selectedIds.has(r.id))
-  const showHover = hoverTitle && hoverDetails
+  const showHover = Boolean(hoverTitle && hoverDetails)
+  const wrapStyle = maxHeight && maxHeight !== 'none' ? { maxHeight } : undefined
 
   if (rows.length === 0) {
     return (
@@ -85,14 +97,14 @@ export function SrDataTable<T extends { id: string }>({
   return (
     <>
       <div
-        className={cn('sr-table-wrap', responsive && 'sr-table-wrap--responsive')}
-        style={{ maxHeight }}
+        className={cn('sr-table-wrap', responsive && 'sr-table-wrap--responsive', wrapClassName)}
+        style={wrapStyle}
       >
-        <table className="sr-table">
+        <table className={cn('sr-table', density === 'comfortable' && 'sr-table--comfortable', tableClassName)}>
           <thead>
-            <tr>
+            <tr className="sr-table-header-row">
               {onToggleRow && (
-                <th className="col-check" style={{ width: 40 }}>
+                <th className="col-check" style={{ width: 40 }} rowSpan={headerFilters === 'inline' && onColFilterChange ? 2 : 1}>
                   <input
                     type="checkbox"
                     checked={!!allSelected}
@@ -104,9 +116,10 @@ export function SrDataTable<T extends { id: string }>({
               {columns.map((col) => (
                 <th
                   key={col.key}
+                  rowSpan={headerFilters === 'inline' && onColFilterChange && !col.filter ? 2 : 1}
                   className={cn(col.align === 'right' && 'num', col.hideBelow && hideClass[col.hideBelow], col.thClassName)}
                 >
-                  {col.filter && onColFilterChange ? (
+                  {col.filter && onColFilterChange && headerFilters === 'popover' ? (
                     <ColumnFilterHeader
                       label={col.header}
                       filterKey={col.key}
@@ -125,6 +138,36 @@ export function SrDataTable<T extends { id: string }>({
                 </th>
               ))}
             </tr>
+            {headerFilters === 'inline' && onColFilterChange && (
+              <tr className="sr-table-filter-row">
+                {columns.map((col) =>
+                  col.filter ? (
+                    <th
+                      key={`filter-${col.key}`}
+                      className={cn(
+                        'sr-table-filter-row__cell',
+                        col.align === 'right' && 'num',
+                        col.hideBelow && hideClass[col.hideBelow],
+                        col.thClassName
+                      )}
+                    >
+                      <ColumnFilterCell
+                        filterKey={col.key}
+                        type={col.filter.type}
+                        value={colFilters[col.key]}
+                        align={col.align}
+                        onApply={(key, val) => {
+                          const next = { ...colFilters }
+                          if (val === undefined) delete next[key]
+                          else next[key] = val
+                          onColFilterChange?.(next)
+                        }}
+                      />
+                    </th>
+                  ) : null
+                )}
+              </tr>
+            )}
           </thead>
           <tbody>
             {rows.map((row) => {
@@ -224,7 +267,7 @@ export function SrDataTable<T extends { id: string }>({
         )}
       </div>
 
-      {showHover && (
+      {showHover && hoverTitle && hoverDetails && (
         <RowHoverPopover
           hover={rowHover.hover}
           getTitle={hoverTitle}

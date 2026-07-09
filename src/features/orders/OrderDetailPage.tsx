@@ -3,11 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   ArrowLeft, Copy, Plus, Trash2, FileText, Folder,
-  ZoomIn, ZoomOut, RotateCw, Maximize2, MapPin, Phone, Mail, User,
+  ZoomIn, ZoomOut, RotateCw, Maximize2, MapPin, Phone, Mail, User, Sparkles,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { WorkflowStageCompact } from '@/components/ui/WorkflowStepper'
+import { ResizableSplit } from '@/components/orders/ResizableSplit'
 import { getOrderById } from '@/data/mock-orders'
 import { getOrderAdjuster, getOrderAuditLog } from '@/data/mock-order-detail'
 import {
@@ -22,7 +22,7 @@ import { cn } from '@/lib/cn'
 import type { Order, OrderDocument, OrderAdjuster, AuditEntry, OrderWorkflow } from '@/data/models'
 
 const leftTabs = ['Charges', 'Internal Ratings', 'Related PO', 'Invoice History', 'Accounting Sync', 'Notes', 'Instructions'] as const
-const rightTabs = ['Account', 'Billing', 'Audit', 'Documents'] as const
+const rightTabs = ['A.I.', 'Account', 'Billing', 'Audit', 'Documents'] as const
 
 export function OrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>()
@@ -33,7 +33,7 @@ export function OrderDetailPage() {
   const auditLog = getOrderAuditLog(orderId ?? '')
 
   const [leftTab, setLeftTab] = useState<(typeof leftTabs)[number]>('Charges')
-  const [rightTab, setRightTab] = useState<(typeof rightTabs)[number]>('Billing')
+  const [rightTab, setRightTab] = useState<(typeof rightTabs)[number]>('A.I.')
   const [selectedDoc, setSelectedDoc] = useState<string | null>(null)
 
   const relatedPOs = getRelatedPOs(orderId ?? '')
@@ -81,169 +81,179 @@ export function OrderDetailPage() {
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="od-page">
-      <header className="od-header od-header--compact">
-        <div className="od-header__row">
-          <button type="button" onClick={() => navigate(-1)} className="od-back">
-            <ArrowLeft size={14} strokeWidth={2} />
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="od-page od-page--apple">
+      <div className="od-topbar">
+        <button type="button" onClick={() => navigate(-1)} className="od-back" aria-label="Back">
+          <ArrowLeft size={15} strokeWidth={2} />
+        </button>
+        <div className="od-topbar__ids">
+          <span className="od-topbar__order">{order.orderNo}</span>
+          {order.probillId && <span className="od-topbar__probill">{order.probillId}</span>}
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(order.orderNo)
+              addToast('Order # copied')
+            }}
+            className="od-topbar__copy"
+            aria-label="Copy order number"
+          >
+            <Copy size={13} strokeWidth={1.7} />
           </button>
-          <div className="od-header__ids">
-            <span className="od-header__order">{order.orderNo}</span>
-            {order.probillId && <span className="od-header__probill">{order.probillId}</span>}
-            <button
-              type="button"
-              onClick={() => {
-                navigator.clipboard.writeText(order.orderNo)
-                addToast('Order # copied')
-              }}
-              className="od-header__copy"
-            >
-              <Copy size={13} strokeWidth={1.7} />
-            </button>
-          </div>
-          <div className="od-actions od-actions--compact">
-            <Button variant="ghost" size="sm">Auto Rate</Button>
-            <Button variant="ghost" size="sm">Audit</Button>
-            <Button variant="ghost" size="sm">A &amp; I</Button>
-            <Button variant="primary" size="sm">Generate Invoice</Button>
-          </div>
+        </div>
+        <div className="od-topbar__actions">
+          <Button variant="ghost" size="sm" className="od-btn-pill">Auto Rate</Button>
+          <Button variant="ghost" size="sm" className="od-btn-pill">Audit</Button>
+          <Button variant="primary" size="sm" className="od-btn-generate">
+            <FileText size={14} strokeWidth={2} />
+            Generate Invoice
+          </Button>
+        </div>
+      </div>
+
+      <div className="od-stack">
+        <div className="od-card od-card--meta">
+          <span className="od-card--meta__customer">{order.customer}</span>
+          <span className="od-card--meta__sep">·</span>
+          <span className="od-card--meta__po">PO {order.poNo}</span>
+          <span className="od-card--meta__sep">·</span>
+          <span className="od-card--meta__date">{formatDate(order.orderDate)}</span>
         </div>
 
-        <div className="od-top-strip">
-          <div className="od-top-strip__meta">
-            <span className="od-top-strip__customer">{order.customer}</span>
-            <span className="od-top-strip__dot">·</span>
-            <span>PO {order.poNo}</span>
-            <span className="od-top-strip__dot">·</span>
-            <span>{formatDate(order.orderDate)}</span>
-          </div>
-          <div className="od-stops-row">
-            <CompactStop type="pickup" stop={pickup} onView={() => addToast('Opening pickup details…')} />
-            <CompactStop type="delivery" stop={delivery} onView={() => addToast('Opening delivery details…')} />
-          </div>
+        <div className="od-card od-card--stops">
+          <CompactStop type="pickup" stop={pickup} onView={() => addToast('Opening pickup details…')} />
+          <CompactStop type="delivery" stop={delivery} onView={() => addToast('Opening delivery details…')} />
         </div>
 
         {order.workflow && (
-          <div className="od-stage-inline">
-            <WorkflowStageCompact workflow={order.workflow} />
+          <div className="od-card od-card--stages">
+            <ValidationCards workflow={order.workflow} />
           </div>
         )}
 
-        {order.workflow && <ValidationCards workflow={order.workflow} />}
-      </header>
-
-      <div className="od-dual">
-        {/* Left — billing workspace */}
-        <div className="od-panel od-panel--left">
-          <div className="od-tabs od-tabs--apple">
-            {leftTabs.map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setLeftTab(t)}
-                className={cn('od-tabs__btn', leftTab === t && 'is-active')}
-              >
-                {t}{(t === 'Notes' || t === 'Instructions') && ' (0)'}
-              </button>
-            ))}
-            {leftTab === 'Charges' && (
-              <Button size="sm" variant="ghost" className="!ml-auto !mr-2 !h-7 shrink-0">
-                <Plus size={14} strokeWidth={1.7} /> Add
-              </Button>
-            )}
-          </div>
-
-          <div className="od-panel__body">
-            {leftTab === 'Charges' && (
-              <>
-                <div className="od-panel__body--flush -mx-3.5 sm:-mx-4 od-table-scroll">
-                  <table className="od-charges-clean od-charges-clean--full">
-                    <thead>
-                      <tr>
-                        <th>Item</th>
-                        <th>Description</th>
-                        <th className="num">Price</th>
-                        <th className="num">Qty</th>
-                        <th>Tax Code</th>
-                        <th className="num">Total Charges</th>
-                        <th>Created On</th>
-                        <th>Created By</th>
-                        <th />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {charges.map((c, i) => (
-                        <tr key={i} className="od-charges-clean__row">
-                          <td className="item">{c.item}</td>
-                          <td className="desc">{c.description}</td>
-                          <td className="num">{formatCurrency(c.price, order.currency)}</td>
-                          <td className="num">{c.qty}</td>
-                          <td>{c.taxCode ?? '—'}</td>
-                          <td className="num">{formatCurrency(c.total, order.currency)}</td>
-                          <td className="meta">{formatDate(c.createdOn)}</td>
-                          <td className="meta">{c.createdBy.split('@')[0]}</td>
-                          <td className="act">
-                            <button type="button" className="od-charge-del" title="Remove charge">
-                              <Trash2 size={13} strokeWidth={1.7} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="od-summary od-summary--full od-summary--inset">
-                  <span>Base Charges <strong>{formatCurrency(totals.base, order.currency)}</strong></span>
-                  <span>FSC Amount <strong>{formatCurrency(totals.fsc, order.currency)}</strong></span>
-                  <span>Sub Total <strong>{formatCurrency(totals.sub, order.currency)}</strong></span>
-                  <span>Tax Amount <strong>{formatCurrency(totals.tax, order.currency)}</strong></span>
-                  <span className="od-summary__total">Total <strong>{formatCurrency(totals.total || order.invoiceAmount, order.currency)}</strong></span>
-                </div>
-              </>
-            )}
-            {leftTab === 'Internal Ratings' && <InternalRatingsTable ratings={internalRatings} />}
-            {leftTab === 'Related PO' && <RelatedPOTable rows={relatedPOs} />}
-            {leftTab === 'Invoice History' && <InvoiceHistoryTable rows={invoiceHistory} />}
-            {leftTab === 'Accounting Sync' && <AccountingSyncTable rows={accountingSync} />}
-            {leftTab === 'Notes' && <EmptyPanel title="No notes" hint="Add notes for this order." actionLabel="Add note" />}
-            {leftTab === 'Instructions' && (
-              <EmptyPanel
-                title={order.instruction ? 'Instructions' : 'No instructions'}
-                hint={order.instruction ?? 'Special handling instructions appear here.'}
-              />
-            )}
-          </div>
-        </div>
-
-        {/* Right — account / billing / audit / docs */}
-        <div className="od-panel od-panel--right">
-          <div className="od-tabs od-tabs--apple">
-            {rightTabs.map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setRightTab(t)}
-                className={cn('od-tabs__btn', rightTab === t && 'is-active')}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-          <div className="od-panel__body">
-            {rightTab === 'Account' && <AccountPanel order={order} />}
-            {rightTab === 'Billing' && (
-              <BillingPanel order={order} claimsContact={claimsContact} totals={totals} />
-            )}
-            {rightTab === 'Audit' && <AuditPanel entries={auditLog} />}
-            {rightTab === 'Documents' && (
-              <DocumentsPanel
-                documents={order.documents ?? []}
-                selectedDoc={selectedDoc}
-                onSelect={setSelectedDoc}
-              />
-            )}
-          </div>
-        </div>
+        <ResizableSplit
+          className="od-splitter--panels"
+          defaultRatio={58}
+          left={
+            <div className="od-panel-card od-panel-card--left">
+              <div className="od-tabs od-tabs--card">
+                {leftTabs.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setLeftTab(t)}
+                    className={cn('od-tabs__btn', leftTab === t && 'is-active')}
+                  >
+                    {t}{(t === 'Notes' || t === 'Instructions') && ' (0)'}
+                  </button>
+                ))}
+                {leftTab === 'Charges' && (
+                  <Button size="sm" variant="ghost" className="!ml-auto !mr-2 !h-7 shrink-0 od-btn-pill">
+                    <Plus size={14} strokeWidth={1.7} /> Add
+                  </Button>
+                )}
+              </div>
+              <div className="od-panel__body">
+                {leftTab === 'Charges' && (
+                  <>
+                    <div className="od-panel__body--flush od-table-scroll">
+                      <table className="od-charges-clean od-charges-clean--full">
+                        <thead>
+                          <tr>
+                            <th>Item</th>
+                            <th>Description</th>
+                            <th className="num">Price</th>
+                            <th className="num">Qty</th>
+                            <th>Tax Code</th>
+                            <th className="num">Total Charges</th>
+                            <th>Created On</th>
+                            <th>Created By</th>
+                            <th />
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {charges.map((c, i) => (
+                            <tr key={i} className="od-charges-clean__row">
+                              <td className="item">{c.item}</td>
+                              <td className="desc">{c.description}</td>
+                              <td className="num">{formatCurrency(c.price, order.currency)}</td>
+                              <td className="num">{c.qty}</td>
+                              <td>{c.taxCode ?? '—'}</td>
+                              <td className="num">{formatCurrency(c.total, order.currency)}</td>
+                              <td className="meta">{formatDate(c.createdOn)}</td>
+                              <td className="meta">{c.createdBy.split('@')[0]}</td>
+                              <td className="act">
+                                <button type="button" className="od-charge-del" title="Remove charge">
+                                  <Trash2 size={13} strokeWidth={1.7} />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="od-summary od-summary--full od-summary--inset">
+                      <span>Base Charges <strong>{formatCurrency(totals.base, order.currency)}</strong></span>
+                      <span>FSC Amount <strong>{formatCurrency(totals.fsc, order.currency)}</strong></span>
+                      <span>Sub Total <strong>{formatCurrency(totals.sub, order.currency)}</strong></span>
+                      <span>Tax Amount <strong>{formatCurrency(totals.tax, order.currency)}</strong></span>
+                      <span className="od-summary__total">Total <strong>{formatCurrency(totals.total || order.invoiceAmount, order.currency)}</strong></span>
+                    </div>
+                  </>
+                )}
+                {leftTab === 'Internal Ratings' && <InternalRatingsTable ratings={internalRatings} />}
+                {leftTab === 'Related PO' && <RelatedPOTable rows={relatedPOs} />}
+                {leftTab === 'Invoice History' && <InvoiceHistoryTable rows={invoiceHistory} />}
+                {leftTab === 'Accounting Sync' && <AccountingSyncTable rows={accountingSync} />}
+                {leftTab === 'Notes' && <EmptyPanel title="No notes" hint="Add notes for this order." actionLabel="Add note" />}
+                {leftTab === 'Instructions' && (
+                  <EmptyPanel
+                    title={order.instruction ? 'Instructions' : 'No instructions'}
+                    hint={order.instruction ?? 'Special handling instructions appear here.'}
+                  />
+                )}
+              </div>
+            </div>
+          }
+          right={
+            <div className="od-panel-card od-panel-card--right">
+              <div className="od-tabs od-tabs--card">
+                {rightTabs.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setRightTab(t)}
+                    className={cn('od-tabs__btn', rightTab === t && 'is-active', t === 'A.I.' && 'od-tabs__btn--ai')}
+                  >
+                    {t === 'A.I.' ? (
+                      <>
+                        <Sparkles size={12} strokeWidth={2} />
+                        A.I.
+                      </>
+                    ) : (
+                      t
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div className="od-panel__body">
+                {rightTab === 'A.I.' && <AIPanel order={order} />}
+                {rightTab === 'Account' && <AccountPanel order={order} />}
+                {rightTab === 'Billing' && (
+                  <BillingPanel order={order} claimsContact={claimsContact} totals={totals} />
+                )}
+                {rightTab === 'Audit' && <AuditPanel entries={auditLog} />}
+                {rightTab === 'Documents' && (
+                  <DocumentsPanel
+                    documents={order.documents ?? []}
+                    selectedDoc={selectedDoc}
+                    onSelect={setSelectedDoc}
+                  />
+                )}
+              </div>
+            </div>
+          }
+        />
       </div>
     </motion.div>
   )
@@ -259,16 +269,67 @@ function CompactStop({
   onView: () => void
 }) {
   return (
-    <div className={cn('od-compact-stop od-hover-card', type === 'delivery' && 'od-compact-stop--delivery')}>
-      <div className="od-compact-stop__head">
-        <span className="od-compact-stop__label">{type === 'pickup' ? 'Shipper · Pickup' : 'Consignee · Delivery'}</span>
-        <Button variant="ghost" size="sm" className="!h-6 !px-2 !text-[10px]" onClick={onView}>
+    <div className={cn('od-stop-card', type === 'delivery' && 'od-stop-card--delivery')}>
+      <div className="od-stop-card__head">
+        <span className="od-stop-card__label">{type === 'pickup' ? 'Shipper · Pickup' : 'Consignee · Delivery'}</span>
+        <button type="button" className="od-stop-card__view" onClick={onView}>
           <MapPin size={11} strokeWidth={2} /> View
-        </Button>
+        </button>
       </div>
-      <p className="od-compact-stop__name">{stop.facility}</p>
-      <p className="od-compact-stop__addr">{stop.city}, {stop.state} {stop.zip}</p>
-      <p className="od-compact-stop__time">{stop.actual || stop.schedule}</p>
+      <p className="od-stop-card__name">{stop.facility}</p>
+      <p className="od-stop-card__addr">{stop.address || `${stop.city}, ${stop.state} ${stop.zip}`.trim()}</p>
+      <p className="od-stop-card__time">{stop.actual || stop.schedule}</p>
+    </div>
+  )
+}
+
+function AIPanel({ order }: { order: Order }) {
+  const insights = [
+    {
+      title: 'Rate validation',
+      text: order.workflow?.rateValidation.status === 'warning'
+        ? '1 check shows a warning — review lane rate vs. contracted tariff before invoicing.'
+        : 'All rate checks passed for this order.',
+      tone: order.workflow?.rateValidation.status === 'warning' ? 'warning' : 'positive',
+    },
+    {
+      title: 'Billing readiness',
+      text: `Charge total ${formatCurrency(order.invoiceAmount, order.currency)} · PO billing is ${order.poBillingStatus.toLowerCase()}.`,
+      tone: 'neutral',
+    },
+    {
+      title: 'Suggested action',
+      text: order.poBillingStatus === 'Hold'
+        ? 'Resolve PO hold before generating invoice — contact claims if adjustments are needed.'
+        : 'Order is ready for auto-invoicing once validations complete.',
+      tone: 'action',
+    },
+  ] as const
+
+  return (
+    <div className="od-ai-panel">
+      <div className="od-ai-panel__hero">
+        <div className="od-ai-panel__icon">
+          <Sparkles size={18} strokeWidth={1.8} />
+        </div>
+        <div>
+          <p className="od-ai-panel__title">Charger A.I.</p>
+          <p className="od-ai-panel__subtitle">Insights for {order.orderNo}</p>
+        </div>
+      </div>
+      <ul className="od-ai-panel__list">
+        {insights.map((item) => (
+          <li key={item.title} className={cn('od-ai-panel__item', `od-ai-panel__item--${item.tone}`)}>
+            <p className="od-ai-panel__item-title">{item.title}</p>
+            <p className="od-ai-panel__item-text">{item.text}</p>
+          </li>
+        ))}
+      </ul>
+      <div className="od-ai-panel__prompts">
+        {['Explain rate warning', 'Draft invoice email', 'Compare to similar loads'].map((p) => (
+          <button key={p} type="button" className="od-ai-panel__chip">{p}</button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -466,7 +527,7 @@ function ValidationCards({ workflow }: { workflow: OrderWorkflow }) {
   ] as const
 
   return (
-    <div className="od-validation-cards">
+    <div className="od-validation-cards od-validation-cards--card">
       {cards.map((c) => (
         <div key={c.key} className={cn('od-validation-card od-hover-card', `od-validation-card--${c.data.status}`)}>
           <span className="od-validation-card__label">{c.label}</span>

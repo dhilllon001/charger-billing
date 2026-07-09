@@ -229,6 +229,18 @@
   background: var(--sr-bg-app);
 }
 
+/* Batch page — viewport-locked, table scrolls inside */
+.sr-main:has(.batch-workspace) {
+  overflow: hidden;
+  padding: 0;
+}
+
+/* Order detail — viewport-locked, panels scroll inside */
+.sr-main:has(.od-page--apple) {
+  overflow: hidden;
+  padding: 0;
+}
+
 /* Report page layout */
 .sr-report-page {
   display: flex;
@@ -340,7 +352,6 @@
   position: relative;
   z-index: 5;
 }
-
 .sr-segment__dropdown-item {
   display: flex;
   align-items: center;
@@ -487,52 +498,6 @@
 
 .sr-stat__value--negative {
   color: var(--sr-negative);
-}
-
-/* Apple-style segmented control (batch pipeline) */
-.sr-segment--apple {
-  display: inline-flex;
-  flex-wrap: nowrap;
-  gap: 2px;
-  padding: 3px;
-  background: #E8E8ED;
-  border: none;
-  border-radius: 10px;
-  overflow-x: auto;
-  max-width: 100%;
-}
-
-.sr-segment--apple .sr-segment__btn {
-  padding: 8px 14px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #636366;
-  border-radius: 8px;
-}
-
-.sr-segment--apple .sr-segment__btn:hover {
-  color: #1D1D1F;
-  background: rgba(255, 255, 255, 0.45);
-}
-
-.sr-segment--apple .sr-segment__btn.is-active {
-  background: #FFFFFF;
-  color: #1D1D1F;
-  font-weight: 600;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
-}
-
-.sr-segment--apple .sr-segment__count {
-  padding: 2px 6px;
-  font-size: 11px;
-  font-weight: 600;
-  background: rgba(0, 0, 0, 0.05);
-  color: #86868B;
-}
-
-.sr-segment--apple .sr-segment__btn.is-active .sr-segment__count {
-  background: #F2F2F7;
-  color: #48484A;
 }
 
 /* Charger AI top bar */

@@ -1,6 +1,7 @@
-import { Plus, Tag } from 'lucide-react'
 import type { Order } from '@/data/models'
 import type { SrColumn } from '@/components/report/SrDataTable'
+import type { HoverDetail } from '@/components/report/RowHoverPopover'
+import { BatchRowActionsMenu } from '@/components/batch/BatchRowActionsMenu'
 import { getCurrentWorkflowStage } from '@/components/ui/WorkflowStepper'
 import { formatCurrency, formatDateTimeCompact } from '@/lib/format'
 import { cn } from '@/lib/cn'
@@ -8,36 +9,30 @@ import { cn } from '@/lib/cn'
 function TwoLine({
   primary,
   secondary,
-  primaryClassName,
   align,
 }: {
   primary: React.ReactNode
   secondary?: React.ReactNode
-  primaryClassName?: string
   align?: 'right'
 }) {
+  const showSecondary = secondary != null && secondary !== '' && secondary !== '—'
   return (
-    <div className={cn('batch-cell', align === 'right' && 'batch-cell--right')}>
-      <div className={cn('batch-cell__primary', primaryClassName)}>{primary}</div>
-      {secondary != null && secondary !== '' && secondary !== '—' && (
-        <div className="batch-cell__secondary">{secondary}</div>
-      )}
+    <div className={cn('sr-cell-stack', align === 'right' && 'sr-cell-stack--right')}>
+      <span className="sr-cell-stack__primary">{primary}</span>
+      {showSecondary && <span className="sr-cell-stack__secondary">{secondary}</span>}
     </div>
   )
 }
 
-function CountryFlag({ currency }: { currency?: string }) {
-  const isUS = currency === 'USD'
-  return (
-    <span className="batch-flag" title={isUS ? 'United States' : 'Canada'}>
-      {isUS ? '🇺🇸' : '🇨🇦'}
-    </span>
-  )
+function BillingPill({ status }: { status: Order['poBillingStatus'] }) {
+  const tone =
+    status === 'Billed' ? 'sr-status-pill--positive' : status === 'Hold' ? 'sr-status-pill--warning' : 'sr-status-pill--action'
+  return <span className={cn('sr-status-pill', tone)}>{status}</span>
 }
 
-function CurrentStagePill({ order }: { order: Order }) {
+function StagePill({ order }: { order: Order }) {
   if (!order.workflow) {
-    const stageLabels: Record<string, string> = {
+    const labels: Record<string, string> = {
       rate_validated: 'Rate validated',
       ops_validated: 'Ops validated',
       pod_verified: 'POD Validation',
@@ -47,145 +42,227 @@ function CurrentStagePill({ order }: { order: Order }) {
       as: 'Accounting Sync',
       ready: 'Ready',
     }
-    const label = stageLabels[order.stage] ?? order.stage
-    return <span className="batch-stage-pill">{label}</span>
+    return <span className="sr-status-pill sr-status-pill--neutral">{labels[order.stage] ?? order.stage}</span>
   }
   const current = getCurrentWorkflowStage(order.workflow)
-  return (
-    <span className={cn('batch-stage-pill', `batch-stage-pill--${current.status}`)}>
-      {current.label}
-    </span>
-  )
+  const tone =
+    current.status === 'failed'
+      ? 'sr-status-pill--negative'
+      : current.status === 'warning'
+        ? 'sr-status-pill--warning'
+        : current.status === 'passed'
+          ? 'sr-status-pill--positive'
+          : current.status === 'pending'
+            ? 'sr-status-pill--action'
+            : 'sr-status-pill--neutral'
+  return <span className={cn('sr-status-pill', tone)}>{current.label}</span>
 }
 
-function truncateLoc(value: string, max = 28) {
+function stageSecondary(order: Order): string {
+  if (order.workflow) return getCurrentWorkflowStage(order.workflow).detail
+  return order.invoiceStatus || '—'
+}
+
+function trunc(value: string, max = 28) {
+  if (!value) return '—'
   return value.length > max ? `${value.slice(0, max)}…` : value
 }
 
-/** Cleaner default columns — extended fields on row click */
+function locationLine(city: string, state: string) {
+  if (city && state) return `${city}, ${state}`
+  return city || state || '—'
+}
+
+export function batchHoverTitle(order: Order) {
+  return order.orderNo
+}
+
+export function batchHoverSubtitle(order: Order) {
+  return order.customer
+}
+
+export function batchHoverDetails(order: Order): HoverDetail[] {
+  return [
+    { label: 'PO', value: order.poNo },
+    { label: 'Amount', value: formatCurrency(order.invoiceAmount, order.currency) },
+    { label: 'Billing', value: order.poBillingStatus },
+    { label: 'Pickup', value: formatDateTimeCompact(order.pickUpDate) },
+    { label: 'Delivery', value: formatDateTimeCompact(order.deliveryDate) },
+    { label: 'Route', value: `${order.pickupCity} → ${order.deliveryCity}` },
+  ]
+}
+
+/** Grouped two-line columns — action menu + stage first */
 export function buildBatchGroupedColumns(): SrColumn<Order>[] {
   return [
     {
-      key: 'indicators',
+      key: 'actions',
       header: '',
-      thClassName: 'col-indicators',
+      thClassName: 'batch-col-action',
+      className: 'batch-col-action',
       cell: (row) => (
-        <div className="batch-indicators">
-          <button type="button" className="batch-indicators__btn" title="Expand" onClick={(e) => e.stopPropagation()}>
-            <Plus size={12} strokeWidth={2} />
-          </button>
-          <div className="batch-indicators__meta">
-            <CountryFlag currency={row.currency} />
-            {row.hasPod && <span className="batch-pod-badge">POD</span>}
-            <button type="button" className="batch-indicators__tag" title="Rates" onClick={(e) => e.stopPropagation()}>
-              <Tag size={11} strokeWidth={2} />
-            </button>
-          </div>
+        <div className="batch-row-menu-wrap">
+          <BatchRowActionsMenu order={row} />
         </div>
+      ),
+    },
+    {
+      key: 'stage',
+      header: 'Stage',
+      thClassName: 'batch-col-stage',
+      className: 'batch-col-stage',
+      cell: (row) => (
+        <TwoLine primary={<StagePill order={row} />} secondary={stageSecondary(row)} />
       ),
     },
     {
       key: 'customer',
       header: 'Customer',
-      thClassName: 'col-customer',
+      thClassName: 'batch-col-customer',
+      className: 'batch-col-customer',
       filter: { type: 'text' },
       cell: (row) => (
         <TwoLine
-          primary={<span title={row.customer}>{truncateLoc(row.customer, 32)}</span>}
-          secondary={<span title={row.billToCustomer}>Bill to · {truncateLoc(row.billToCustomer, 28)}</span>}
+          primary={trunc(row.customer, 32)}
+          secondary={`Bill to – ${trunc(row.billToCustomer, 28)}`}
         />
       ),
     },
     {
       key: 'orderNo',
-      header: 'Order',
-      thClassName: 'col-order',
+      header: 'Order No.',
+      thClassName: 'batch-col-order',
+      className: 'batch-col-order',
+      filter: { type: 'text' },
       cell: (row) => (
         <TwoLine
-          primary={<span className="mono">{row.orderNo}</span>}
-          secondary={
-            <span className="mono">
-              PO {row.poNo} · {row.poCategory} · {row.poBillingStatus}
-            </span>
-          }
+          primary={<span className="mono rep-name">{row.orderNo}</span>}
+          secondary={<span className="mono">PO {row.poNo}</span>}
         />
       ),
     },
     {
       key: 'division',
       header: 'Division',
-      thClassName: 'col-division',
-      hideBelow: 'lg',
+      thClassName: 'batch-col-division',
+      className: 'batch-col-division',
+      cell: (row) => (
+        <TwoLine primary={trunc(row.division, 24)} secondary={row.poCategory} />
+      ),
+    },
+    {
+      key: 'poBilling',
+      header: 'PO Billing',
+      thClassName: 'batch-col-billing',
+      className: 'batch-col-billing',
       cell: (row) => (
         <TwoLine
-          primary={<span title={row.division}>{truncateLoc(row.division, 22)}</span>}
-          secondary={row.callerName ? `${row.callerName} · ${row.equipment}` : row.equipment}
+          primary={<BillingPill status={row.poBillingStatus} />}
+          secondary={row.invoiceStatus}
         />
       ),
     },
     {
       key: 'dates',
-      header: 'Schedule',
-      thClassName: 'col-dates',
+      header: 'Pick Up / Delivery',
+      thClassName: 'batch-col-dates',
+      className: 'batch-col-dates',
       cell: (row) => (
         <TwoLine
-          primary={<span className="batch-cell__date">PU {formatDateTimeCompact(row.pickUpDate)}</span>}
-          secondary={<span className="batch-cell__date">DL {formatDateTimeCompact(row.deliveryDate)}</span>}
-        />
-      ),
-    },
-    {
-      key: 'route',
-      header: 'Route',
-      thClassName: 'col-route',
-      cell: (row) => (
-        <TwoLine
-          primary={
-            <span className="batch-route" title={`${row.pickupLocation} → ${row.deliveryLocation}`}>
-              <span>{row.pickupCity}</span>
-              <span className="batch-route__arrow">→</span>
-              <span>{row.deliveryCity}</span>
-            </span>
-          }
-          secondary={
-            <span title={`${row.pickupLocation} · ${row.deliveryLocation}`}>
-              {truncateLoc(row.pickupLocation, 18)} → {truncateLoc(row.deliveryLocation, 18)}
-            </span>
-          }
+          primary={formatDateTimeCompact(row.pickUpDate)}
+          secondary={formatDateTimeCompact(row.deliveryDate)}
         />
       ),
     },
     {
       key: 'invoiceAmount',
-      header: 'Amount',
+      header: 'I.Amt',
       align: 'right',
-      thClassName: 'col-amount',
+      thClassName: 'batch-col-amount',
+      className: 'batch-col-amount',
       filter: { type: 'range' },
       cell: (row) => (
         <TwoLine
           align="right"
-          primary={<span className="batch-amount">{formatCurrency(row.invoiceAmount, row.currency)}</span>}
+          primary={<span className="mono rep-name">{formatCurrency(row.invoiceAmount, row.currency)}</span>}
           secondary={row.invoiceAvgCount}
         />
       ),
     },
     {
-      key: 'meta',
-      header: 'Details',
-      thClassName: 'col-meta',
+      key: 'pickup',
+      header: 'Pickup',
+      thClassName: 'batch-col-location',
+      className: 'batch-col-location',
       hideBelow: 'lg',
       cell: (row) => (
         <TwoLine
-          primary={row.reasonCode || (row.audited ? 'Audited' : '—')}
-          secondary={row.draftInvoice ? `Draft ${row.draftInvoiceNo ?? ''}` : formatDateTimeCompact(row.orderDate)}
+          primary={trunc(row.pickupLocation, 26)}
+          secondary={locationLine(row.pickupCity, row.pickupState)}
         />
       ),
     },
     {
-      key: 'stage',
-      header: 'Stage',
-      thClassName: 'col-stage',
-      cell: (row) => <CurrentStagePill order={row} />,
+      key: 'delivery',
+      header: 'Delivery',
+      thClassName: 'batch-col-location',
+      className: 'batch-col-location',
+      hideBelow: 'lg',
+      cell: (row) => (
+        <TwoLine
+          primary={trunc(row.deliveryLocation, 26)}
+          secondary={locationLine(row.deliveryCity, row.deliveryState)}
+        />
+      ),
+    },
+    {
+      key: 'caller',
+      header: "Caller's Name",
+      thClassName: 'batch-col-caller',
+      className: 'batch-col-caller',
+      hideBelow: 'lg',
+      cell: (row) => (
+        <TwoLine primary={row.callerName || '—'} secondary={row.equipment} />
+      ),
+    },
+    {
+      key: 'orderDate',
+      header: 'Order / Due',
+      thClassName: 'batch-col-order-date',
+      className: 'batch-col-order-date',
+      hideBelow: 'lg',
+      cell: (row) => (
+        <TwoLine
+          primary={formatDateTimeCompact(row.orderDate)}
+          secondary={row.invoiceDue ? formatDateTimeCompact(row.invoiceDue) : '—'}
+        />
+      ),
+    },
+    {
+      key: 'reason',
+      header: 'Reason / Audited',
+      thClassName: 'batch-col-reason',
+      className: 'batch-col-reason',
+      hideBelow: 'xl',
+      cell: (row) => (
+        <TwoLine
+          primary={row.reasonCode || '—'}
+          secondary={row.audited ? 'Audited' : 'Not audited'}
+        />
+      ),
+    },
+    {
+      key: 'draft',
+      header: 'Draft Invoice',
+      thClassName: 'batch-col-draft',
+      className: 'batch-col-draft',
+      hideBelow: 'xl',
+      cell: (row) => (
+        <TwoLine
+          primary={row.draftInvoice ? 'Yes' : 'No'}
+          secondary={row.draftInvoiceNo ?? '—'}
+        />
+      ),
     },
   ]
 }

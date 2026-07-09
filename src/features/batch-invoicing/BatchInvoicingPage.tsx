@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Sparkles, SlidersHorizontal, LayoutGrid, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Sparkles, SlidersHorizontal, LayoutGrid, ChevronLeft, ChevronRight, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Segment } from '@/components/ui/Segment'
 import { SearchInput } from '@/components/ui/SearchInput'
@@ -29,7 +29,7 @@ import {
   PO_BILLING_OPTIONS,
   type BatchFilters,
 } from './batch-filters'
-import { buildBatchGroupedColumns } from '@/lib/batch-grouped-columns'
+import { buildBatchGroupedColumns, batchHoverTitle, batchHoverSubtitle, batchHoverDetails } from '@/lib/batch-grouped-columns'
 
 const stageCounts = getStageCounts()
 const PAGE_SIZES = [25, 50, 100]
@@ -134,103 +134,109 @@ export function BatchInvoicingPage() {
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn('batch-workspace', selectedIds.size > 0 && 'batch-workspace--has-selection')}
+      style={{ height: '100%' }}
     >
       <div className="batch-panel">
-        <div className="batch-panel__top">
+        <section className="batch-section batch-section--pipeline">
           <div className="batch-panel__pipeline batch-panel__pipeline--dropdown">
             <Segment
               items={segments}
               value={filters.stage}
               onChange={(stage) => patch({ stage })}
-              className="sr-segment--apple min-w-max"
+              className="sr-segment--apple"
             />
           </div>
           <div className="batch-panel__top-actions">
             <Button
               variant="ghost"
               size="sm"
-              className="batch-btn-validate"
+              className="batch-btn-ghost"
               onClick={() => addToast('AI validated 735 orders — 58 flagged for review')}
             >
               <Sparkles size={14} strokeWidth={1.7} className="batch-btn-validate__icon" />
               <span className="hidden sm:inline">Auto-validate all</span>
             </Button>
             <Link to="/consolidated">
-              <Button variant="ghost" size="sm">Consolidated Invoicing</Button>
+              <Button variant="ghost" size="sm" className="batch-btn-ghost">Consolidated Invoicing</Button>
             </Link>
           </div>
-        </div>
+        </section>
 
-        <div className="batch-panel__toolbar">
-          <div className="batch-toolbar__primary">
-            <Button
-              size="sm"
-              disabled={selectedIds.size === 0}
-              onClick={() => addToast(`Generating invoice for ${selectedIds.size} orders…`)}
-            >
-              Generate Invoice
-            </Button>
-            <SearchInput
-              value={filters.search}
-              onChange={(search) => patch({ search })}
-              placeholder="Filter by keyword…"
-              className="batch-panel__search"
-              scope={{
-                value: filters.searchScope,
-                onChange: (searchScope) => patch({ searchScope: searchScope as BatchFilters['searchScope'] }),
-                options: [
-                  { value: 'order', label: 'Order #' },
-                  { value: 'po', label: 'PO #' },
-                  { value: 'all', label: 'All' },
-                ],
-              }}
-            />
-            <div className="batch-toolbar__dates">
-              <input
-                type="date"
-                value={filters.dateFrom}
-                onChange={(e) => patch({ dateFrom: e.target.value })}
-                className="batch-toolbar-date"
-                title="From"
+        <section className="batch-section batch-section--toolbar">
+          <div className="batch-toolbar">
+            <div className="batch-toolbar__left">
+              <SearchInput
+                value={filters.search}
+                onChange={(search) => patch({ search })}
+                placeholder="Filter by keyword…"
+                className="batch-panel__search"
+                scope={{
+                  value: filters.searchScope,
+                  onChange: (searchScope) => patch({ searchScope: searchScope as BatchFilters['searchScope'] }),
+                  options: [
+                    { value: 'order', label: 'Order #' },
+                    { value: 'po', label: 'PO #' },
+                    { value: 'all', label: 'All' },
+                  ],
+                }}
               />
-              <span className="batch-toolbar-date-sep">to</span>
-              <input
-                type="date"
-                value={filters.dateTo}
-                onChange={(e) => patch({ dateTo: e.target.value })}
-                className="batch-toolbar-date"
-                title="To"
-              />
+              <div className="batch-toolbar__dates">
+                <input
+                  type="date"
+                  value={filters.dateFrom}
+                  onChange={(e) => patch({ dateFrom: e.target.value })}
+                  className="batch-toolbar-date"
+                  title="From"
+                />
+                <span className="batch-toolbar-date-sep">to</span>
+                <input
+                  type="date"
+                  value={filters.dateTo}
+                  onChange={(e) => patch({ dateTo: e.target.value })}
+                  className="batch-toolbar-date"
+                  title="To"
+                />
+              </div>
+            </div>
+            <div className="batch-toolbar__right">
+              <button
+                type="button"
+                className={`batch-toolbar-chip${filters.quickPod ? ' is-active' : ''}`}
+                onClick={() => patch({ quickPod: !filters.quickPod })}
+              >
+                Quick POD
+              </button>
+              <select
+                value={filters.poBillingStatus}
+                onChange={(e) => patch({ poBillingStatus: e.target.value })}
+                className="batch-toolbar-select"
+              >
+                {PO_BILLING_OPTIONS.map((o) => (
+                  <option key={o} value={o}>{o === 'ALL' ? 'Any billing' : o}</option>
+                ))}
+              </select>
+              <button type="button" className="batch-toolbar-chip" onClick={() => setFiltersOpen(true)}>
+                <SlidersHorizontal size={14} strokeWidth={1.7} />
+                Filters
+                {activeCount > 0 && <span className="batch-toolbar-badge">{activeCount}</span>}
+              </button>
+              <button type="button" className="batch-toolbar-chip hidden lg:inline-flex">
+                <LayoutGrid size={14} strokeWidth={1.7} />
+                Layouts
+              </button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="batch-btn-generate"
+                disabled={selectedIds.size === 0}
+                onClick={() => addToast(`Generating invoice for ${selectedIds.size} orders…`)}
+              >
+                <FileText size={15} strokeWidth={2} />
+                Generate Invoice
+              </Button>
             </div>
           </div>
-          <div className="batch-toolbar__secondary">
-            <button
-              type="button"
-              className={`batch-toolbar-chip${filters.quickPod ? ' is-active' : ''}`}
-              onClick={() => patch({ quickPod: !filters.quickPod })}
-            >
-              Quick POD
-            </button>
-            <select
-              value={filters.poBillingStatus}
-              onChange={(e) => patch({ poBillingStatus: e.target.value })}
-              className="batch-toolbar-select"
-            >
-              {PO_BILLING_OPTIONS.map((o) => (
-                <option key={o} value={o}>{o === 'ALL' ? 'Any billing' : o}</option>
-              ))}
-            </select>
-            <button type="button" className="batch-toolbar-chip" onClick={() => setFiltersOpen(true)}>
-              <SlidersHorizontal size={14} strokeWidth={1.7} />
-              Filters
-              {activeCount > 0 && <span className="batch-toolbar-badge">{activeCount}</span>}
-            </button>
-            <button type="button" className="batch-toolbar-chip hidden sm:inline-flex">
-              <LayoutGrid size={14} strokeWidth={1.7} />
-              Layouts
-            </button>
-          </div>
-        </div>
+        </section>
 
         {appliedFilters.length > 0 && (
           <div className="batch-panel__applied">
@@ -238,36 +244,45 @@ export function BatchInvoicingPage() {
           </div>
         )}
 
-        <div className="batch-panel__table batch-panel__table--grouped">
-          <SrDataTable
-            rows={paged}
-            columns={groupedColumns}
-            colFilters={filters.colFilters}
-            onColFilterChange={(colFilters) => patch({ colFilters })}
-            selectedIds={selectedIds}
-            onToggleRow={toggleRow}
-            onToggleAll={toggleAll}
-            onRowClick={(row) => navigate(`/orders/${row.id}`)}
-            emptyTitle="No orders match these filters"
-            emptyHint="Try a different pipeline stage or clear filters"
-            emptyAction={
-              <Button variant="ghost" size="sm" onClick={resetFilters}>Clear filters</Button>
-            }
-            responsive
-            mobileCard={(row) => ({
-              title: row.orderNo,
-              subtitle: row.customer,
-              amount: formatCurrency(row.invoiceAmount, row.currency),
-              meta: (
-                <div className="batch-mobile-meta">
-                  <span>{row.pickupCity} → {row.deliveryCity}</span>
-                </div>
-              ),
-            })}
-          />
-        </div>
+        <section className="batch-table-shell">
+          <div className="batch-panel__table batch-panel__table--grouped">
+            <SrDataTable
+              rows={paged}
+              columns={groupedColumns}
+              colFilters={filters.colFilters}
+              onColFilterChange={(colFilters) => patch({ colFilters })}
+              selectedIds={selectedIds}
+              onToggleRow={toggleRow}
+              onToggleAll={toggleAll}
+              onRowClick={(row) => navigate(`/orders/${row.id}`)}
+              hoverTitle={batchHoverTitle}
+              hoverSubtitle={batchHoverSubtitle}
+              hoverDetails={batchHoverDetails}
+              density="comfortable"
+              wrapClassName="sr-table-wrap--flush"
+              tableClassName="sr-table--batch"
+              emptyTitle="No orders match these filters"
+              emptyHint="Try a different pipeline stage or clear filters"
+              emptyAction={
+                <Button variant="ghost" size="sm" onClick={resetFilters}>Clear filters</Button>
+              }
+              maxHeight="none"
+              responsive
+              mobileCard={(row) => ({
+                title: row.orderNo,
+                subtitle: row.customer,
+                amount: formatCurrency(row.invoiceAmount, row.currency),
+                meta: (
+                  <div className="batch-mobile-meta">
+                    <span>{row.pickupCity} → {row.deliveryCity}</span>
+                  </div>
+                ),
+              })}
+            />
+          </div>
+        </section>
 
-        <div className="batch-panel__footer">
+        <section className="batch-section batch-section--footer">
           <span className="batch-panel__footer-total">
             Total: <strong>{filtered.length.toLocaleString()}</strong>
           </span>
@@ -291,7 +306,7 @@ export function BatchInvoicingPage() {
               <ChevronRight size={16} strokeWidth={2} />
             </button>
           </div>
-        </div>
+        </section>
       </div>
 
       <SelectActionBar

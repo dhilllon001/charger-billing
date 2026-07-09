@@ -40,6 +40,7 @@ export const EQUIPMENT_OPTIONS = ['ALL', 'Dry Van', 'FTL', 'Reefer', 'LTL']
 
 export const BATCH_COL_FILTER_DEFS = [
   { key: 'customer', label: 'Customer', type: 'text' as const },
+  { key: 'orderNo', label: 'Order No.', type: 'text' as const },
   { key: 'invoiceAmount', label: 'Invoice Amount', type: 'range' as const },
 ]
 
@@ -122,6 +123,7 @@ export function filterBatchOrders(orders: Order[], filters: BatchFilters): Order
     if (quickPod && !o.hasPod) return false
 
     if (!matchesColFilter(o.customer, colFilters.customer)) return false
+    if (!matchesColFilter(o.orderNo, colFilters.orderNo)) return false
     if (!matchesColFilter(o.invoiceAmount, colFilters.invoiceAmount)) return false
 
     return true
